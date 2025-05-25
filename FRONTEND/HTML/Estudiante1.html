@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Estudiantes - Sistema Académico</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>Sistema de Gestión Académica</h1>
+    </header>
+
+    <nav class="app-sidebar">
+      <ul class="sidebar-menu">
+        <li class="menu-item active"><a href="/Index.html"><span>Panel Principal</span></a></li>
+        <li class="menu-item"><a href="/FRONTEND/HTML/Departamento1.html"><img src="/FRONTEND/IMG/redes.png" alt="Icono Departamento" /><span>Departamentos</span></a></li>
+        <li class="menu-item"><a href="/FRONTEND/HTML/Estudiante1.html"><img src="/FRONTEND/IMG/libro-de-lectura.png" alt="Icono Estudiantes" /><span>Estudiantes</span></a></li>
+        <li class="menu-item"><a href="/FRONTEND/HTML/Asigantura1.html"><img src="/FRONTEND/IMG/libros.png" alt="Icono Asignaturas" /><span>Asignaturas</span></a></li>
+        <li class="menu-item"><a href="/FRONTEND/HTML/Asistencia1.html"><img src="/FRONTEND/IMG/asistencia.png" alt="Icono Asistencias" /><span>Asistencias</span></a></li>
+      </ul>
+    </nav>
+
+    <main class="app-main-content">
+      <section class="students-section">
+        <div class="section-header">
+          <h2 class="section-title"><i class="fas fa-users"></i> Gestión de Estudiantes</h2>
+          <button class="btn btn-primary" id="add-student-btn"> <i class="fas fa-user-plus"></i> Nuevo Estudiante</button>
+        </div>
+
+        <div class="students-filters">
+          <div class="filter-group">
+            <label for="filter-department">Facultad:</label>
+            <select id="filter-department">
+              <option value="all">Todos</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filter-doc-type">Tipo Documento:</label>
+            <select id="filter-doc-type">
+              <option value="all">Todos</option>
+              <option value="CC">Cédula</option>
+              <option value="TI">Tarjeta Identidad</option>
+              <option value="CE">Cédula Extranjería</option>
+              <option value="Pasaporte">Pasaporte</option>
+            </select>
+          </div>
+          <div class="search-box">
+            <input type="text" id="student-search" placeholder="Buscar estudiante..." />
+            <button class="btn-search" id="btn-search"><i class="fas fa-search"></i></button>
+          </div>
+        </div>
+
+        <table class="data-table students-table">
+          <thead>
+            <tr>
+              <th>Nombre Completo</th>
+              <th>Tipo Documento</th>
+              <th>Número Documento</th>
+              <th>Facultad</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="students-table-body"></tbody>
+        </table>
+
+        <div class="table-pagination">
+          <button class="btn-pagination" id="btn-prev"><i class="fas fa-chevron-left"></i></button>
+          <span class="page-info" id="page-info">Página 1 de 1</span>
+          <button class="btn-pagination" id="btn-next"><i class="fas fa-chevron-right"></i></button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal para agregar/editar estudiantes -->
+  <div class="modal" id="student-modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <span class="close-modal" role="button" aria-label="Cerrar modal">&times;</span>
+      <h3 class="modal-title" id="modal-title">Nuevo Estudiante</h3>
+      <form id="student-form" autocomplete="off">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="student-first-name">Nombres:</label>
+            <input type="text" id="student-first-name" name="firstName" required />
+          </div>
+          <div class="form-group">
+            <label for="student-last-name">Apellidos:</label>
+            <input type="text" id="student-last-name" name="lastName" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="student-doc-type">Tipo de Documento:</label>
+            <select id="student-doc-type" name="docType" required>
+              <option value="" disabled selected>Seleccione un tipo de documento</option>
+              <option value="CC">Cédula</option>
+              <option value="TI">Tarjeta Identidad</option>
+              <option value="CE">Cédula Extranjería</option>
+              <option value="Pasaporte">Pasaporte</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="student-doc-number">Número de Documento:</label>
+            <input type="text" id="student-doc-number" name="docNumber" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="student-faculty">Facultad:</label>
+            <select id="student-faculty" name="faculty" required>
+              <option value="" disabled selected>Seleccione una facultad</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-cancel close-modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Estudiante</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="../JS/Estudiante.js"></script>
+</body>
+</html>
+    
