@@ -1,4 +1,4 @@
-// BACKEND/Service/estudianteService.js (¡MUY IMPORTANTE: ESTE ES EL SERVICIO DEL BACKEND!)
+// BACKEND/Service/estudianteService.js
 
 // =======================================================================================
 // ADVERTENCIA: NO IMPORTAR firebase/app NI firebase/firestore AQUI
@@ -25,7 +25,7 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
     const crearEstudiante = async (datosEstudiante) => {
         try {
             // Validación de datos requeridos (ejemplo)
-            if (!datosEstudiante.nombre || !datosEstudiante.apellido || !datosEstudiante.numeroDocumento) {
+            if (!datosEstudiante.firstName || !datosEstudiante.firstSurname || !datosEstudiante.documentNumber) {
                 throw new Error("Nombre, apellido y número de documento son campos obligatorios para el estudiante.");
             }
 
@@ -33,22 +33,18 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
                 ...datosEstudiante,
                 fechaCreacion: new Date(), // Usar objeto Date() o admin.firestore.FieldValue.serverTimestamp()
                 fechaActualizacion: new Date(),
-                // Puedes añadir campos adicionales como 'estado: "activo"', 'asignaturas: []' aquí
                 estado: datosEstudiante.estado || "activo", // Por defecto 'activo'
-                asignaturas: datosEstudiante.asignaturas || [] // Array para IDs de asignaturas
+                asignaturas: datosEstudiante.asignaturas || [], // Array para IDs de asignaturas
+                // IMPORTANTE: Cuando crees estudiantes, asegúrate de que los datos de documento
+                // que envías aquí coincidan con 'tipo de documento' y 'numero de documento'
+                // si quieres usar la misma convención que ya tienes en Firestore.
+                // Si el frontend envía 'documentType' y 'documentNumber', debes mapearlos aquí.
+                // Por ejemplo:
+                // 'tipo de documento': datosEstudiante.documentType,
+                // 'numero de documento': datosEstudiante.documentNumber
             };
 
             const docRef = await db.collection('estudiantes').add(estudianteData);
-
-            // También podrías crear un usuario de Firebase Authentication si lo necesitas
-            // const userRecord = await auth.createUser({
-            //     email: datosEstudiante.email,
-            //     password: datosEstudiante.password, // Solo si lo manejas directamente aquí
-            //     displayName: `${datosEstudiante.nombre} ${datosEstudiante.apellido}`,
-            // });
-            // console.log('Successfully created new user:', userRecord.uid);
-            // await db.collection('estudiantes').doc(docRef.id).update({ uid: userRecord.uid });
-
 
             return {
                 id: docRef.id,
@@ -56,8 +52,7 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
             };
         } catch (error) {
             console.error("Error en crearEstudiante (backend service):", error);
-            // Si el error es por email duplicado en Auth, puedes manejarlo específicamente
-            if (error.code === 'auth/email-already-exists') {
+            if (error.code === 'auth/email-already-exists') { // Si manejas creación de usuarios con email
                 throw new Error("El correo electrónico ya está registrado.");
             }
             throw new Error(`Error al crear estudiante: ${error.message}`);
@@ -65,11 +60,13 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
     };
 
     /**
-     * Obtiene todos los estudiantes con filtros opcionales.
+     * Obtiene todos los estudiantes con filtros opcionales y paginación.
      * @param {Object} filtros - Objeto con filtros de búsqueda (ej. idDepartamento, grupo, estado, busqueda por nombre/documento).
-     * @returns {Promise<Array>} Lista de estudiantes.
+     * @param {number} page - Número de página actual.
+     * @param {number} pageSize - Tamaño de la página.
+     * @returns {Promise<Object>} Objeto con lista de estudiantes y totalCount.
      */
-    const obtenerEstudiantes = async (filtros = {}) => {
+    const obtenerEstudiantes = async (filtros = {}, page = 1, pageSize = 5) => {
         try {
             let q = db.collection('estudiantes');
 
@@ -83,27 +80,35 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
                 q = q.where("estado", "==", filtros.estado);
             }
             if (filtros.tipoDocumento && filtros.tipoDocumento !== 'all') {
-                q = q.where("tipoDocumento", "==", filtros.tipoDocumento);
+                // CORREGIDO: Asegura que el nombre del campo coincida con Firestore
+                q = q.where("tipo de documento", "==", filtros.tipoDocumento);
+            }
+            if (filtros.busqueda) {
+                const searchTerm = filtros.busqueda.toLowerCase();
+                q = q.where("firstName", ">=", searchTerm)
+                     .where("firstName", "<=", searchTerm + '\uf8ff');
             }
 
-            // Búsqueda por nombre o documento (ejemplo de búsqueda parcial si los campos son strings)
-            if (filtros.busqueda) {
-                // Puedes buscar en nombre completo o número de documento
-                // Nota: Firestore no soporta "OR" queries directas entre diferentes campos sin una colección de unión o desnormalización.
-                // Si la búsqueda es por nombre, es un rango:
-                q = q.where("nombreCompleto", ">=", filtros.busqueda) // Asumiendo un campo 'nombreCompleto' concatenado
-                     .where("nombreCompleto", "<=", filtros.busqueda + '\uf8ff');
-                // O si buscas por número de documento:
-                // q = q.where("numeroDocumento", "==", filtros.busqueda); // Esto sería una búsqueda exacta
-            }
+            const totalSnapshot = await q.get();
+            const totalCount = totalSnapshot.size;
+
+            const offset = (page - 1) * pageSize;
+            q = q.orderBy('fechaCreacion', 'desc')
+                 .limit(pageSize)
+                 .offset(offset);
 
             const querySnapshot = await q.get();
-            return querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                fechaCreacion: doc.data().fechaCreacion ? doc.data().fechaCreacion.toDate().toLocaleDateString() : null,
-                fechaActualizacion: doc.data().fechaActualizacion ? doc.data().fechaActualizacion.toDate().toLocaleDateString() : null,
-            }));
+            const students = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    fechaCreacion: data.fechaCreacion ? data.fechaCreacion.toDate().toISOString() : null,
+                    fechaActualizacion: data.fechaActualizacion ? data.fechaActualizacion.toDate().toISOString() : null,
+                };
+            });
+            return { students, totalCount };
+
         } catch (error) {
             console.error("Error en obtenerEstudiantes (backend service):", error);
             throw new Error(`Error al obtener estudiantes: ${error.message}`);
@@ -125,8 +130,8 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
                 return {
                     id: docSnap.id,
                     ...data,
-                    fechaCreacion: data.fechaCreacion ? data.fechaCreacion.toDate().toLocaleDateString() : null,
-                    fechaActualizacion: data.fechaActualizacion ? data.fechaActualizacion.toDate().toLocaleDateString() : null,
+                    fechaCreacion: data.fechaCreacion ? data.fechaCreacion.toDate().toISOString() : null,
+                    fechaActualizacion: data.fechaActualizacion ? data.fechaActualizacion.toDate().toISOString() : null,
                 };
             } else {
                 return null;
@@ -146,9 +151,11 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
     const actualizarEstudiante = async (id, nuevosDatos) => {
         try {
             const docRef = db.collection("estudiantes").doc(id);
+            // IMPORTANTE: Si actualizas el tipo o número de documento, asegúrate de
+            // que los nombres de los campos en 'nuevosDatos' sean 'tipo de documento' y 'numero de documento'.
             await docRef.update({
                 ...nuevosDatos,
-                fechaActualizacion: new Date() // Usar objeto Date()
+                fechaActualizacion: new Date()
             });
         } catch (error) {
             console.error("Error en actualizarEstudiante (backend service):", error);
@@ -165,12 +172,6 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
         try {
             const docRef = db.collection("estudiantes").doc(id);
             await docRef.delete();
-            // Si el estudiante tiene un usuario de Auth asociado, deberías eliminarlo también
-            // const userRecord = await db.collection('estudiantes').doc(id).get();
-            // if (userRecord.exists && userRecord.data().uid) {
-            //     await auth.deleteUser(userRecord.data().uid);
-            //     console.log('Successfully deleted user from Auth:', userRecord.data().uid);
-            // }
         } catch (error) {
             console.error("Error en eliminarEstudiante (backend service):", error);
             throw new Error(`Error al eliminar estudiante: ${error.message}`);
@@ -178,33 +179,69 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
     };
 
     /**
-     * Busca un estudiante por documento (ya existía en departamentoService).
-     * Nota: Si este método ya existe en estudianteService, se elimina la duplicidad.
+     * Busca un estudiante por documento.
      * @param {string} tipoDocumento - Tipo de documento (ej. "CC", "TI").
      * @param {string} numeroDocumento - Número de documento del estudiante.
      * @returns {Promise<Object|null>} Datos del estudiante o null si no se encuentra.
      */
     const buscarEstudiantePorDocumento = async (tipoDocumento, numeroDocumento) => {
+        console.log(`EstudianteService: Buscando estudiante por tipo: ${tipoDocumento}, numero: ${numeroDocumento}`);
         try {
             const q = db.collection('estudiantes')
-                        .where("tipoDocumento", "==", tipoDocumento)
-                        .where("numeroDocumento", "==", numeroDocumento)
+                        // CORREGIDO: Los nombres de los campos deben coincidir con tu Firestore
+                        .where("tipo de documento", "==", tipoDocumento) //
+                        .where("numero de documento", "==", numeroDocumento) //
                         .limit(1);
 
             const querySnapshot = await q.get();
 
+            console.log(`EstudianteService: Documentos encontrados: ${querySnapshot.docs.length}`); // Agregado para depuración
+
             if (querySnapshot.empty) {
+                console.log('EstudianteService: No se encontró ningún estudiante con ese documento.'); // Agregado para depuración
                 return null;
             }
 
+            const doc = querySnapshot.docs[0];
+            const data = doc.data();
+            console.log('EstudianteService: Estudiante encontrado:', { id: doc.id, ...data }); // Agregado para depuración
+
             return {
-                id: querySnapshot.docs[0].id,
-                ...querySnapshot.docs[0].data()
+                id: doc.id,
+                ...data
             };
         } catch (error) {
             console.error("Error en buscarEstudiantePorDocumento (backend service):", error);
             throw new Error(`Error al buscar estudiante por documento: ${error.message}`);
         }
+    };
+
+    /**
+     * Obtiene todos los tipos de documento disponibles.
+     * NOTA: Este es un ejemplo. Podrías tener una colección en Firestore para esto,
+     * o definirlo en tu backend.
+     */
+    const obtenerTiposDocumento = async () => {
+        return [
+            { code: 'CC', name: 'Cédula de Ciudadanía' },
+            { code: 'TI', name: 'Tarjeta de Identidad' },
+            { code: 'CE', name: 'Cédula de Extranjería' },
+            { code: 'PA', name: 'Pasaporte' }
+        ];
+    };
+
+    /**
+     * Obtiene todas las facultades disponibles.
+     * NOTA: Este es un ejemplo. Podrías tener una colección en Firestore para esto,
+     * o definirlo en tu backend.
+     */
+    const obtenerFacultades = async () => {
+        return [
+            { code: 'ING', name: 'Ingeniería' },
+            { code: 'SAL', name: 'Ciencias de la Salud' },
+            { code: 'ART', name: 'Artes y Humanidades' },
+            { code: 'EDU', name: 'Educación' }
+        ];
     };
 
     // Retorna el objeto con los métodos del servicio
@@ -214,6 +251,8 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
         obtenerEstudiantePorId,
         actualizarEstudiante,
         eliminarEstudiante,
-        buscarEstudiantePorDocumento, // Ya lo tenías en tu departamentoService, lo movemos aquí.
+        buscarEstudiantePorDocumento,
+        obtenerTiposDocumento,
+        obtenerFacultades
     };
 }

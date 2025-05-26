@@ -26,10 +26,15 @@ app.use(express.json());
 
 // =========================================================================
 // PASO CLAVE: Inicializa los Routers, pasándoles las instancias de db y auth
-app.use('/api/asignaturas', createAsignaturaRouter(db, auth)); // Llama a la función
-app.use('/api/asistencias', createAsistenciaRouter(db, auth)); // Llama a la función
-app.use('/api/departamentos', createDepartamentoRouter(db, auth)); // Llama a la función
-app.use('/api', createEstudianteRouter(db, auth)); // Llama a la función
+console.log('App.js: Montando router de asignaturas...');
+app.use('/api/asignaturas', createAsignaturaRouter(db, auth));
+console.log('App.js: Montando router de asistencias...');
+app.use('/api/asistencias', createAsistenciaRouter(db, auth));
+console.log('App.js: Montando router de departamentos...');
+app.use('/api/departamentos', createDepartamentoRouter(db, auth));
+console.log('App.js: Montando router de estudiantes en /api...');
+app.use('/api', createEstudianteRouter(db, auth)); // ESTA LÍNEA ES CLAVE
+console.log('App.js: Routers de API montados.');
 // =========================================================================
 
 // Ruta de prueba para verificar que el servidor está funcionando

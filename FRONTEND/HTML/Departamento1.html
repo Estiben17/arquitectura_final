@@ -18,7 +18,7 @@
         </header>
 
         <nav class="app-sidebar">
-            <ul class="sidebar-menu">   
+            <ul class="sidebar-menu"> 
                 <li class="menu-item active">
                     <a href="/Index.html">
                         <span>Panel Principal</span>
@@ -83,12 +83,14 @@
                     <div class="detail-card">
                         <h3 class="detail-title">Información del Departamento</h3>
                         <div class="detail-content">
-                            <p><strong>Código:</strong> <span id="department-code">DEPT-001</span></p>
-                            <p><strong>Nombre:</strong> <span id="department-name">Ingeniería de Sistemas y Computacion</span></p>
-                            <p><strong>Fecha de creación:</strong> <span id="department-creation-date">22/04/2025</span></p>
-                            <p><strong>Estado:</strong> <span class="status-badge active">Activo</span></p>
-                            <p><strong>Director:</strong> <span id="department-director">Dr. Estiben Davila</span></p>
-                            <p><strong>Descripción:</strong> <span id="department-description">Departamento encargado de la formación de futuros ingenieros  de sistemas y computacion.</span></p>
+                            <p style="display: none;"><strong>ID:</strong> <span id="department-id-display"></span></p> 
+                            <p><strong>Código:</strong> <span id="department-code"></span></p>
+                            <p><strong>Nombre:</strong> <span id="department-name-display"></span></p>
+                            <p><strong>Fecha de creación:</strong> <span id="department-creation-date-display"></span></p>
+                            <p><strong>Estado:</strong> <span class="status-badge" id="department-status-display"></span></p>
+                            <p><strong>Fecha de actualización:</strong> <span id="department-update-date-display"></span></p>
+                            <p><strong>Director:</strong> <span id="department-director"></span></p>
+                            <p><strong>Descripción:</strong> <span id="department-description"></span></p>
                         </div>
                     </div>
 
@@ -96,23 +98,43 @@
                         <div class="stat-card">
                             <i class="fas fa-users"></i>
                             <h4>Estudiantes</h4>
-                            <span class="stat-value">0</span>
+                            <span class="stat-value" id="total-students">0</span>
                         </div>
                         <div class="stat-card">
                             <i class="fas fa-chalkboard-teacher"></i>
                             <h4>Profesores</h4>
-                            <span class="stat-value">0</span>
+                            <span class="stat-value" id="total-professors">0</span>
                         </div>
                         <div class="stat-card">
                             <i class="fas fa-book"></i>
                             <h4>Asignaturas</h4>
-                            <span class="stat-value">0</span>
+                            <span class="stat-value" id="total-subjects">0</span>
                         </div>
                     </div>
                 </div>
+
+                <section class="department-list-section">
+                    <h3 class="section-title">Listado de Departamentos</h3>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Fecha Actualización</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="department-list-body">
+                                <tr><td colspan="5">Cargando departamentos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
             </section>
 
-            <!-- Nueva sección para consultar estudiantes -->
             <section class="student-search-section">
                 <div class="section-header">
                     <h2 class="section-title">
@@ -122,53 +144,58 @@
 
                 <div class="student-search-container">
                     <div class="search-student-box">
-                        <input type="text" id="student-id-input" placeholder="Ingrese documento de identidad">
+                        <select id="student-document-type-input">
+                            <option value="">Tipo de Documento</option>
+                            <option value="CC">Cédula de Ciudadanía</option>
+                            <option value="TI">Tarjeta de Identidad</option>
+                            <option value="CE">Cédula de Extranjería</option>
+                        </select>
+                        <input type="text" id="student-id-input" placeholder="Ingrese número de documento">
                         <button class="btn btn-primary" id="btn-search-student">
                             <i class="fas fa-search"></i> Buscar
                         </button>
                     </div>
 
-                    <div class="student-results" id="student-results" style="display: none;">
+                    <div class="student-results" id="student-search-result" style="display: none;">
                         <div class="student-info-card">
                             <div class="student-header">
                                 <h3>Información del Estudiante</h3>
-                                <span class="status-badge active" id="student-status">Activo</span>
+                                <span class="status-badge" id="student-status"></span>
                             </div>
                             
                             <div class="student-details">
                                 <div class="detail-column">
-                                    <p><strong>Documento:</strong> <span id="student-id">123456789</span></p>
-                                    <p><strong>Nombre:</strong> <span id="student-name">Juan Pérez</span></p>
-                                    <p><strong>Fecha Nacimiento:</strong> <span id="student-birthdate">15/03/2000</span></p>
-                                    <p><strong>Género:</strong> <span id="student-gender">Masculino</span></p>
+                                    <p><strong>Documento:</strong> <span id="student-id"></span></p>
+                                    <p><strong>Nombre:</strong> <span id="student-name"></span></p>
+                                    <p><strong>Fecha Nacimiento:</strong> <span id="student-birthdate"></span></p>
+                                    <p><strong>Género:</strong> <span id="student-gender"></span></p>
                                 </div>
                                 <div class="detail-column">
-                                    <p><strong>Facultad:</strong> <span id="student-faculty">Ingeniería</span></p>
-                                    <p><strong>Programa:</strong> <span id="student-program">Ingeniería de Sistemas</span></p>
-                                    <p><strong>Semestre:</strong> <span id="student-semester">5</span></p>
-                                    <p><strong>Promedio:</strong> <span id="student-average">4.2</span></p>
+                                    <p><strong>Facultad:</strong> <span id="student-faculty"></span></p>
+                                    <p><strong>Programa:</strong> <span id="student-program"></span></p>
+                                    <p><strong>Semestre:</strong> <span id="student-semester"></span></p>
+                                    <p><strong>Promedio:</strong> <span id="student-average"></span></p>
                                 </div>
                             </div>
                             
                             <div class="student-contact">
                                 <h4>Información de Contacto</h4>
-                                <p><strong>Email:</strong> <span id="student-email">juan.perez@universidad.edu</span></p>
-                                <p><strong>Teléfono:</strong> <span id="student-phone">+57 300 123 4567</span></p>
-                                <p><strong>Dirección:</strong> <span id="student-address">Calle 123 #45-67, Bogotá</span></p>
+                                <p><strong>Email:</strong> <span id="student-email"></span></p>
+                                <p><strong>Teléfono:</strong> <span id="student-phone"></span></p>
+                                <p><strong>Dirección:</strong> <span id="student-address"></span></p>
                             </div>
                         </div>
                     </div>
 
                     <div class="no-results" id="no-student-results" style="display: none;">
                         <i class="fas fa-user-slash"></i>
-                        <p>No se encontró ningún estudiante con ese documento</p>
+                        <p>No se encontró ningún estudiante con ese documento.</p>
                     </div>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Modal para consultar departamento -->
     <div class="modal" id="view-department-modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -176,27 +203,27 @@
             <div class="view-content">
                 <div class="info-row">
                     <span class="info-label">Código:</span>
-                    <span class="info-value" id="view-department-code">DEPT-001</span>
+                    <span class="info-value" id="view-department-code"></span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Nombre:</span>
-                    <span class="info-value" id="view-department-name">Ingeniería de Sistemas y Computacion</span>
+                    <span class="info-value" id="view-department-name"></span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Fecha creación:</span>
-                    <span class="info-value" id="view-department-date">22/04/2025</span>
+                    <span class="info-value" id="view-department-date"></span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Estado:</span>
-                    <span class="info-value"><span class="status-badge active">Activo</span></span>
+                    <span class="info-value"><span class="status-badge" id="view-department-status"></span></span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Director:</span>
-                    <span class="info-value" id="view-department-director">Dr. Estiben Davila</span>
+                    <span class="info-value" id="view-department-director"></span>
                 </div>
                 <div class="info-row full-width">
                     <span class="info-label">Descripción:</span>
-                    <p class="info-value" id="view-department-description">Departamento encargado de la formación de futuros ingenieros  de sistemas y computacion.</p>
+                    <p class="info-value" id="view-department-description"></p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -205,34 +232,35 @@
         </div>
     </div>
 
-    <!-- Modal para editar departamento -->
     <div class="modal" id="edit-department-modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
             <h3 class="modal-title">Editar Departamento</h3>
             <form id="department-form">
+                <input type="hidden" id="edit-department-id"> 
+
                 <div class="form-group">
                     <label for="department-code-input">Código:</label>
-                    <input type="text" id="department-code-input" value="DEPT-001" readonly>
+                    <input type="text" id="department-code-input" readonly>
                 </div>
                 <div class="form-group">
-                    <label for="department-name-input">Nombre:</label>
-                    <input type="text" id="department-name-input" value="Ingeniería de Sistemas" required>
+                    <label for="edit-department-name">Nombre:</label>
+                    <input type="text" id="edit-department-name" required>
                 </div>
                 <div class="form-group">
                     <label for="department-director-input">Director:</label>
-                    <input type="text" id="department-director-input" value="Dr. Carlos Méndez" required>
+                    <input type="text" id="department-director-input" required>
                 </div>
                 <div class="form-group">
-                    <label for="department-status-input">Estado:</label>
-                    <select id="department-status-input" required>
-                        <option value="active" selected>Activo</option>
-                        <option value="inactive">Inactivo</option>
+                    <label for="edit-department-status">Estado:</label>
+                    <select id="edit-department-status" required>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="department-description-input">Descripción:</label>
-                    <textarea id="department-description-input" rows="4" required>Departamento encargado de la formación en ingeniería de sistemas y tecnologías de la información.</textarea>
+                    <textarea id="department-description-input" rows="4" required></textarea>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-cancel close-modal">Cancelar</button>

@@ -1,34 +1,52 @@
 // BACKEND/Router/estudianteRouter.js
 
-import { Router } from 'express'; // Importa Router directamente
-// =========================================================================
-// PASO CLAVE: Importa la FUNCIÓN que crea tu controlador de estudiante
+import { Router } from 'express';
 import createEstudianteController from '../Controller/estudianteController.js';
-// =========================================================================
+import createEstudianteService from '../Service/estudianteService.js'; // Importa el servicio aquí
 
-// =========================================================================
-// PASO CLAVE: Exporta una FUNCIÓN que crea este router,
-// y que RECIBE 'db' y 'auth' (del Admin SDK) como argumentos.
 export default function createEstudianteRouter(db, auth) {
-    const router = Router(); // Crea una nueva instancia de Router aquí
+    console.log('EstudianteRouter: createEstudianteRouter ha sido llamado.');
+    const router = Router();
+    
+    // Primero, crea la instancia del servicio, ya que el controlador la necesita
+    const estudianteService = createEstudianteService(db, auth); 
+    
+    // Luego, crea la instancia del controlador, pasándole el servicio
+    const estudianteController = createEstudianteController(estudianteService); 
+    console.log('EstudianteRouter: EstudianteController ha sido instanciado.');
 
-    // =====================================================================
-    // PASO CLAVE: Instancia tu controlador de estudiante,
-    // pasándole 'db' y 'auth'.
-    const estudianteController = createEstudianteController(db, auth);
-    // =====================================================================
+    // Rutas para estudiantes (CRUD - Asegúrate de tener estas)
+    router.post('/estudiantes', (req, res, next) => estudianteController.crearEstudiante(req, res, next));
+    router.get('/estudiantes/:id', (req, res, next) => estudianteController.obtenerEstudiantePorId(req, res, next));
+    router.put('/estudiantes/:id', (req, res, next) => estudianteController.actualizarEstudiante(req, res, next));
+    router.delete('/estudiantes/:id', (req, res, next) => estudianteController.eliminarEstudiante(req, res, next));
 
-    // Rutas para la gestión de estudiantes
-    // NOTA: Estas rutas ya son las que se esperan después de '/api' en app.js.
-    // Por ejemplo, router.post('/estudiantes') será accesible como POST /api/estudiantes
+    // Ruta para buscar estudiante por documento (ya la tienes)
+    router.get('/estudiantes/buscar-documento', (req, res, next) => {
+        console.log('EstudianteRouter: Ruta /estudiantes/buscar-documento alcanzada!');
+        estudianteController.buscarPorDocumento(req, res, next);
+    });
 
-    router.post('/estudiantes', estudianteController.crearEstudiante);
-    router.get('/estudiantes', estudianteController.obtenerEstudiantes);
-    router.put('/estudiantes/:id', estudianteController.actualizarEstudiante);
-    router.get('/estudiantes/buscar', estudianteController.buscarPorDocumento);
-    // Añade la ruta para obtener por ID si la implementaste en el controlador
-    // router.get('/estudiantes/:id', estudianteController.obtenerEstudiantePorId);
+    // RUTA GENERAL PARA OBTENER ESTUDIANTES (PARA PAGINACIÓN Y FILTROS)
+    // Esta ruta es la que tu frontend llama con: /api/estudiantes?_page=1&_limit=5
+    router.get('/estudiantes', (req, res, next) => {
+        console.log('EstudianteRouter: Ruta /estudiantes (con o sin paginación) alcanzada!');
+        estudianteController.obtenerEstudiantes(req, res, next);
+    });
 
+    // NUEVAS RUTAS QUE FALTAN Y CAUSAN EL 404:
+    // Ruta para obtener tipos de documento
+    router.get('/documentTypes', (req, res, next) => {
+        console.log('EstudianteRouter: Ruta /documentTypes alcanzada!');
+        estudianteController.getTiposDocumento(req, res, next);
+    });
 
-    return router; // Retorna la instancia de Router
+    // Ruta para obtener facultades
+    router.get('/facultades', (req, res, next) => {
+        console.log('EstudianteRouter: Ruta /facultades alcanzada!');
+        estudianteController.getFacultades(req, res, next);
+    });
+
+    console.log('EstudianteRouter: Router de estudiante configurado y listo para retornar.');
+    return router;
 }

@@ -1,47 +1,38 @@
 // BACKEND/Controller/estudianteController.js
 
-// =========================================================================
-// PASO CLAVE: Importa la FUNCIÓN que crea tu servicio de estudiante
 import createEstudianteService from '../Service/estudianteService.js';
-// =========================================================================
 
-// =========================================================================
-// PASO CLAVE: Exporta una FUNCIÓN que crea tu controlador de estudiante,
-// y que RECIBE 'db' y 'auth' (del Admin SDK) como argumentos.
-export default function createEstudianteController(db, auth) {
+export default function createEstudianteController(estudianteService) { // <<-- CAMBIO AQUI: Recibe directamente el servicio
+    // El servicio ya se pasa desde el router, no lo crees aquí de nuevo
+    // const estudianteService = createEstudianteService(db, auth); // ELIMINAR ESTA LINEA
 
     // =====================================================================
-    // PASO CLAVE: Instancia tu servicio de estudiante, pasándole 'db' y 'auth'.
-    const estudianteService = createEstudianteService(db, auth);
+    // DEFINICIÓN DE LAS FUNCIONES DEL CONTROLADOR
     // =====================================================================
-
-    // Ahora, los métodos del controlador se definen dentro de esta función
-    // y acceden a los métodos del servicio a través de 'estudianteService'.
 
     const crearEstudiante = async (req, res) => {
         try {
-            // Validación básica
-            if (!req.body.nombres || !req.body.apellidos || !req.body.tipoDocumento || !req.body.numeroDocumento) {
-                return res.status(400).json({ error: "Datos incompletos" });
+            if (!req.body.firstName || !req.body.firstSurname || !req.body.documentType || !req.body.documentNumber) {
+                return res.status(400).json({ error: "Datos incompletos: nombre, apellido, tipo y número de documento son obligatorios." });
             }
 
-            // Preparamos datos para Firebase
             const estudianteData = {
                 ...req.body,
-                // Creamos campos para búsqueda eficiente
                 searchKeywords: [
-                    req.body.nombres.toLowerCase(),
-                    req.body.apellidos.toLowerCase(),
-                    req.body.numeroDocumento.toLowerCase()
+                    (req.body.firstName || '').toLowerCase(),
+                    (req.body.secondName || '').toLowerCase(),
+                    (req.body.firstSurname || '').toLowerCase(),
+                    (req.body.secondSurname || '').toLowerCase(),
+                    (req.body.documentNumber || '').toLowerCase()
                 ],
-                fechaCreacion: new Date(), // Usar objeto Date() o admin.firestore.FieldValue.serverTimestamp()
+                fechaCreacion: new Date(),
                 fechaActualizacion: new Date()
             };
 
             const nuevoEstudiante = await estudianteService.crearEstudiante(estudianteData);
-            res.status(201).json(nuevoEstudiante); // El servicio ya debería retornar el objeto con id y data
+            res.status(201).json(nuevoEstudiante);
         } catch (error) {
-            console.error('Error en crearEstudiante:', error);
+            console.error('Error en crearEstudiante (Controller):', error);
             res.status(500).json({ error: "Error al crear estudiante", details: error.message });
         }
     };
@@ -49,32 +40,20 @@ export default function createEstudianteController(db, auth) {
     const obtenerEstudiantes = async (req, res) => {
         try {
             const { page = 1, limit = 10, ...filtros } = req.query;
-
-            // Convertimos parámetros de paginación a números
             const pagina = parseInt(page);
             const limite = parseInt(limit);
 
-            // Validamos parámetros
-            if (isNaN(pagina) || isNaN(limite)) {
+            if (isNaN(pagina) || isNaN(limite) || pagina < 1 || limite < 1) {
                 return res.status(400).json({ error: "Parámetros de paginación inválidos" });
             }
 
-            const { estudiantes, total } = await estudianteService.obtenerEstudiantes({
-                pagina,
-                limite,
-                filtros
-            });
+            const { students, totalCount } = await estudianteService.obtenerEstudiantes(filtros, pagina, limite);
 
-            res.status(200).json({
-                data: estudiantes,
-                paginacion: {
-                    paginaActual: pagina,
-                    totalPaginas: Math.ceil(total / limite),
-                    totalEstudiantes: total
-                }
-            });
+            res.set('X-Total-Count', totalCount); 
+            
+            res.status(200).json(students);
         } catch (error) {
-            console.error('Error en obtenerEstudiantes:', error);
+            console.error('Error en obtenerEstudiantes (Controller):', error);
             res.status(500).json({ error: "Error al obtener estudiantes", details: error.message });
         }
     };
@@ -82,66 +61,61 @@ export default function createEstudianteController(db, auth) {
     const actualizarEstudiante = async (req, res) => {
         try {
             const { id } = req.params;
-
             if (!id) {
-                return res.status(400).json({ error: "ID de estudiante es requerido" });
+                return res.status(400).json({ error: "ID de estudiante es requerido para actualizar" });
             }
 
-            // Preparamos datos de actualización
             const updateData = {
                 ...req.body,
-                fechaActualizacion: new Date() // Usar objeto Date()
+                fechaActualizacion: new Date()
             };
 
-            // Si se actualizan campos de búsqueda
-            if (req.body.nombres || req.body.apellidos || req.body.numeroDocumento) {
+            if (req.body.firstName || req.body.secondName || req.body.firstSurname || req.body.secondSurname || req.body.documentNumber) {
                 updateData.searchKeywords = [
-                    (req.body.nombres || '').toLowerCase(),
-                    (req.body.apellidos || '').toLowerCase(),
-                    (req.body.numeroDocumento || '').toLowerCase()
+                    (req.body.firstName || '').toLowerCase(),
+                    (req.body.secondName || '').toLowerCase(),
+                    (req.body.firstSurname || '').toLowerCase(),
+                    (req.body.secondSurname || '').toLowerCase(),
+                    (req.body.documentNumber || '').toLowerCase()
                 ];
             }
 
             await estudianteService.actualizarEstudiante(id, updateData);
-
-            res.status(200).json({
-                message: "Estudiante actualizado correctamente",
-                id,
-                ...updateData
-            });
+            res.status(200).json({ message: "Estudiante actualizado correctamente" });
         } catch (error) {
-            console.error('Error en actualizarEstudiante:', error);
+            console.error('Error en actualizarEstudiante (Controller):', error);
             res.status(500).json({ error: "Error al actualizar estudiante", details: error.message });
         }
     };
 
     const buscarPorDocumento = async (req, res) => {
+        console.log('EstudianteController: Método buscarPorDocumento ejecutado.'); 
         try {
-            const { tipoDocumento, numeroDocumento } = req.query;
+            const { tipo, numero } = req.query;
 
-            if (!tipoDocumento || !numeroDocumento) {
+            if (!tipo || !numero) {
                 return res.status(400).json({
                     error: "Parámetros requeridos",
                     details: "Tipo y número de documento son obligatorios"
                 });
             }
 
-            const estudiante = await estudianteService.buscarPorDocumento(
-                tipoDocumento,
-                numeroDocumento
+            const estudiante = await estudianteService.buscarEstudiantePorDocumento(
+                tipo,
+                numero
             );
 
             if (!estudiante) {
                 return res.status(404).json({
                     message: "Estudiante no encontrado",
-                    tipoDocumento,
-                    numeroDocumento
+                    tipoDocumento: tipo,
+                    numeroDocumento: numero
                 });
             }
 
             res.status(200).json(estudiante);
         } catch (error) {
-            console.error('Error en buscarPorDocumento:', error);
+            console.error('Error en buscarPorDocumento (Controller):', error);
             res.status(500).json({
                 error: "Error en búsqueda de estudiante",
                 details: error.message
@@ -149,7 +123,6 @@ export default function createEstudianteController(db, auth) {
         }
     };
 
-    // Nuevo método para obtener un estudiante por ID
     const obtenerEstudiantePorId = async (req, res) => {
         try {
             const { id } = req.params;
@@ -166,20 +139,62 @@ export default function createEstudianteController(db, auth) {
 
             res.status(200).json(estudiante);
         } catch (error) {
-            console.error('Error en obtenerEstudiantePorId:', error);
+            console.error('Error en obtenerEstudiantePorId (Controller):', error);
             res.status(500).json({ error: "Error al obtener estudiante", details: error.message });
         }
     };
 
+    const eliminarEstudiante = async (req, res) => {
+        try {
+            const { id } = req.params;
+            if (!id) {
+                return res.status(400).json({ error: "ID de estudiante es requerido para eliminar" });
+            }
+            await estudianteService.eliminarEstudiante(id);
+            res.status(200).json({ message: "Estudiante eliminado correctamente" });
+        } catch (error) {
+            console.error('Error en eliminarEstudiante (Controller):', error);
+            res.status(500).json({ error: "Error al eliminar estudiante", details: error.message });
+        }
+    };
+
     // =====================================================================
-    // PASO CLAVE: Retorna un objeto con todas las funciones controladoras
-    // para que el router pueda acceder a ellas.
+    // ¡NUEVOS MÉTODOS NECESARIOS!
+    // Estos son los que tu frontend está esperando.
+    // =====================================================================
+
+    const getTiposDocumento = async (req, res) => {
+        try {
+            const tipos = await estudianteService.obtenerTiposDocumento();
+            res.status(200).json(tipos);
+        } catch (error) {
+            console.error("Error en getTiposDocumento (controller):", error);
+            res.status(500).json({ message: "Error al obtener tipos de documento", details: error.message });
+        }
+    };
+
+    const getFacultades = async (req, res) => {
+        try {
+            const facultades = await estudianteService.obtenerFacultades();
+            res.status(200).json(facultades);
+        } catch (error) {
+            console.error("Error en getFacultades (controller):", error);
+            res.status(500).json({ message: "Error al obtener facultades", details: error.message });
+        }
+    };
+
+    // =====================================================================
+    // RETORNO DEL OBJETO CONTROLADOR
+    // Asegúrate de que todos los métodos que quieres exponer estén aquí.
+    // =====================================================================
     return {
         crearEstudiante,
         obtenerEstudiantes,
         actualizarEstudiante,
         buscarPorDocumento,
-        obtenerEstudiantePorId // Asegúrate de que tu router tenga una ruta para esto
+        obtenerEstudiantePorId,
+        eliminarEstudiante,
+        getTiposDocumento, // <<-- AÑADIDO
+        getFacultades     // <<-- AÑADIDO
     };
-    // =====================================================================
 }

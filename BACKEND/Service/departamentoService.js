@@ -1,4 +1,4 @@
-// BACKEND/Service/departamentoService.js (¡MUY IMPORTANTE: ESTE ES EL SERVICIO DEL BACKEND!)
+// BACKEND/Service/departamentoService.js
 
 // =======================================================================================
 // ADVERTENCIA: NO IMPORTAR firebase/app NI firebase/firestore AQUI
@@ -6,40 +6,30 @@
 // ESTE ARCHIVO RECIBE 'db' DEL SDK ADMIN.
 // =======================================================================================
 
-// Si necesitas usar admin.firestore.FieldValue.serverTimestamp(), importa 'admin'
-// import { admin } from '../firebase.js'; // Descomenta si usas admin.firestore.FieldValue.serverTimestamp()
-
-// =======================================================================================
-// PASO CLAVE: Exporta una FUNCIÓN que "crea" tu servicio y RECIBE 'db' y 'auth'
 export default function createDepartamentoService(db, auth) { // 'db' es la instancia de Firestore del Admin SDK
-
-    // Ya no necesitas 'departamentosCollection', 'estudiantesCollection', etc. globales
-    // porque 'db' es la instancia de Firestore del Admin SDK
-    // y accedes a las colecciones con db.collection('nombre_coleccion')
 
     /**
      * Servicio para gestión de departamentos (para el backend)
      */
     const obtenerDepartamentos = async (filtros = {}) => {
         try {
-            let q = db.collection('departamentos'); // Inicia la consulta desde la instancia db del Admin SDK
+            let q = db.collection('departamentos');
 
             if (filtros.estado && filtros.estado !== 'all') {
                 q = q.where("estado", "==", filtros.estado);
             }
 
             if (filtros.busqueda) {
-                // Para búsquedas de prefijo, Firestore necesita un rango.
-                // Considera usar un campo 'searchKeywords' como en estudiante, o soluciones de búsqueda full-text.
-                // Esta es una búsqueda básica de "empieza con".
                 q = q.where("nombre", ">=", filtros.busqueda)
                      .where("nombre", "<=", filtros.busqueda + '\uf8ff');
             }
 
-            const querySnapshot = await q.get(); // Ejecuta la consulta
+            const querySnapshot = await q.get();
             return querySnapshot.docs.map(doc => ({
                 id: doc.id,
-                ...doc.data()
+                ...doc.data(),
+                fechaCreacion: doc.data().fechaCreacion ? doc.data().fechaCreacion.toDate().toISOString() : null,
+                fechaActualizacion: doc.data().fechaActualizacion ? doc.data().fechaActualizacion.toDate().toISOString() : null,
             }));
         } catch (error) {
             console.error("Error en obtenerDepartamentos (backend service):", error);
@@ -49,15 +39,19 @@ export default function createDepartamentoService(db, auth) { // 'db' es la inst
 
     const obtenerDepartamentoPorId = async (id) => {
         try {
-            // Usa la instancia 'db' (del Admin SDK) para acceder al documento
             const docRef = db.collection("departamentos").doc(id);
-            const docSnap = await docRef.get(); // Ejecuta la obtención del documento
+            const docSnap = await docRef.get();
 
-            if (docSnap.exists) { // 'exists' es una propiedad booleana
-                return { id: docSnap.id, ...docSnap.data() };
+            if (docSnap.exists) {
+                const data = docSnap.data();
+                return {
+                    id: docSnap.id,
+                    ...data,
+                    fechaCreacion: data.fechaCreacion ? data.fechaCreacion.toDate().toISOString() : null,
+                    fechaActualizacion: data.fechaActualizacion ? data.fechaActualizacion.toDate().toISOString() : null,
+                };
             } else {
-                return null; // Retorna null si no se encuentra, en lugar de lanzar error aquí
-                // El controlador puede decidir si es 404 o lanzar un error específico
+                return null;
             }
         } catch (error) {
             console.error("Error en obtenerDepartamentoPorId (backend service):", error);
@@ -67,31 +61,27 @@ export default function createDepartamentoService(db, auth) { // 'db' es la inst
 
     const actualizarDepartamento = async (id, nuevosDatos) => {
         try {
-            // Usa la instancia 'db' (del Admin SDK) para acceder al documento
             const docRef = db.collection("departamentos").doc(id);
             await docRef.update({
                 ...nuevosDatos,
-                fechaActualizacion: new Date() // Usar objeto Date() o admin.firestore.FieldValue.serverTimestamp()
+                fechaActualizacion: new Date()
             });
         } catch (error) {
-            console.error("Error en actualizarDepartamento (backend service):", error);
+            console.error("Error en actualizarDepartamento:", error);
             throw new Error(`Error al actualizar departamento: ${error.message}`);
         }
     };
 
     const obtenerEstadisticasDepartamento = async (idDepartamento) => {
         try {
-            // Obtener estudiantes del departamento
             const estudiantesSnapshot = await db.collection('estudiantes')
                                                 .where("idDepartamento", "==", idDepartamento)
                                                 .get();
 
-            // Obtener profesores del departamento
             const profesoresSnapshot = await db.collection('profesores')
                                                 .where("idDepartamento", "==", idDepartamento)
                                                 .get();
 
-            // Obtener asignaturas del departamento
             const asignaturasSnapshot = await db.collection('asignaturas')
                                                 .where("idDepartamento", "==", idDepartamento)
                                                 .get();
@@ -107,36 +97,18 @@ export default function createDepartamentoService(db, auth) { // 'db' es la inst
         }
     };
 
-    const buscarEstudiantePorDocumento = async (tipoDocumento, numeroDocumento) => {
-        try {
-            // Asumiendo que el campo en Firestore es 'numeroDocumento' y 'tipoDocumento'
-            const q = db.collection('estudiantes')
-                        .where("tipoDocumento", "==", tipoDocumento)
-                        .where("numeroDocumento", "==", numeroDocumento)
-                        .limit(1); // Limitar a 1 resultado si el documento es único
+    // NOTA: 'buscarEstudiantePorDocumento' es más propio del servicio de estudiantes.
+    // Si necesitas esta función para el contexto de un departamento (ej. asignar un estudiante),
+    // podrías considerar inyectar el servicio de estudiantes aquí o hacer una llamada explícita.
+    // Por ahora, lo he eliminado de aquí para evitar la duplicación y mantener la separación de responsabilidades.
 
-            const querySnapshot = await q.get();
-
-            if (querySnapshot.empty) {
-                return null;
-            }
-
-            return {
-                id: querySnapshot.docs[0].id,
-                ...querySnapshot.docs[0].data()
-            };
-        } catch (error) {
-            console.error("Error en buscarEstudiantePorDocumento (backend service):", error);
-            throw new Error(`Error al buscar estudiante por documento: ${error.message}`);
-        }
-    };
 
     // Retorna el objeto con los métodos del servicio
     return {
         obtenerDepartamentos,
-        obtenerDepartamentoPorId, // Asegúrate de que el controlador llama a este método
+        obtenerDepartamentoPorId,
         actualizarDepartamento,
-        obtenerEstadisticasDepartamento, // Renombrado para claridad con el controlador anterior
-        buscarEstudiantePorDocumento
+        obtenerEstadisticasDepartamento,
+        // buscarEstudiantePorDocumento // Eliminar de aquí si no se usa directamente para dep.
     };
 }
