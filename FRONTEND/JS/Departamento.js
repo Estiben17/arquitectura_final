@@ -31,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const departmentIdDisplay = document.getElementById('department-id-display');
     const departmentCodeDisplay = document.getElementById('department-code');
     const departmentNameDisplay = document.getElementById('department-name-display');
-    // >>>>>>>>>> LÍNEA CORREGIDA AQUÍ <<<<<<<<<<
     const departmentCreationDateDisplay = document.getElementById('department-creation-date-display');
     const departmentUpdateDateDisplay = document.getElementById('department-update-date-display');
     const departmentStatusDisplay = document.getElementById('department-status-display');
@@ -121,13 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Inicialización de la aplicación ---
     inicializarAplicacion();
 
-    // --------------------------
-    // Funciones de Departamento
-    // --------------------------
-
-    /**
-     * Inicializa la aplicación: carga el primer departamento por defecto y el listado.
-     */
     async function inicializarAplicacion() {
         console.log('Inicializando aplicación...');
         try {
@@ -149,8 +141,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Carga los datos de un departamento específico en la sección principal de la interfaz.
-     * También actualiza el ID del departamento seleccionado globalmente.
+     * 
+     * 
      * @param {string} id El ID del departamento a cargar.
      */
     async function cargarDepartamentoSeleccionado(id) {
@@ -356,10 +348,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --------------------------
-    // Funciones de Estudiante
-    // --------------------------
-
     /**
      * Busca un estudiante por tipo y número de documento y muestra sus detalles.
      */
@@ -427,13 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --------------------------
-    // Funciones de Utilidad
-    // --------------------------
-
-    /**
-     * Cierra todos los modales abiertos.
-     */
+    
     function cerrarModales() {
         console.log('Cerrando modales...');
         allModals.forEach(modal => modal.style.display = 'none');

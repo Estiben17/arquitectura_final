@@ -31,7 +31,6 @@ try {
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    // databaseURL: `https://${serviceAccount.project_id}.firebaseio.com` // Opcional, si usas Realtime Database
 });
 
 export const db = admin.firestore(); // Exporta la instancia de Firestore del Admin SDK

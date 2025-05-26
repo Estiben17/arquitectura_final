@@ -1,16 +1,5 @@
 // BACKEND/Service/estudianteService.js
 
-// =======================================================================================
-// ADVERTENCIA: NO IMPORTAR firebase/app NI firebase/firestore AQUI
-// NO DEBE HABER 'firebaseConfig', 'initializeApp', 'getFirestore', 'collection', 'doc', etc.
-// ESTE ARCHIVO RECIBE 'db' DEL SDK ADMIN.
-// =======================================================================================
-
-// Si necesitas usar admin.firestore.FieldValue.serverTimestamp(), importa 'admin'
-// import { admin } from '../firebase.js'; // Descomenta si usas admin.firestore.FieldValue.serverTimestamp()
-
-// =======================================================================================
-// PASO CLAVE: Exporta una FUNCIÓN que "crea" tu servicio y RECIBE 'db' y 'auth'
 export default function createEstudianteService(db, auth) { // 'db' es la instancia de Firestore del Admin SDK
 
     /**
@@ -24,9 +13,7 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
      */
     const crearEstudiante = async (datosEstudiante) => {
         try {
-            // Validación de datos requeridos (ejemplo)
-            // Asegúrate de que los nombres de los campos aquí coincidan con lo que tu frontend envía
-            // y con lo que deseas guardar en Firestore (ej. 'nombre' y 'apellido').
+            
             if (!datosEstudiante.nombre || !datosEstudiante.apellido || !datosEstudiante.numero_de_documento) {
                 throw new Error("Nombre, apellido y número de documento son campos obligatorios para el estudiante.");
             }
@@ -37,11 +24,7 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
                 fechaActualizacion: new Date(),
                 estado: datosEstudiante.estado || "activo", // Por defecto 'activo'
                 asignaturas: datosEstudiante.asignaturas || [], // Array para IDs de asignaturas
-                // Los campos como 'tipo de documento' y 'numero de documento'
-                // deben venir correctamente nombrados desde datosEstudiante si el frontend los envía así.
-                // Ejemplo:
-                // 'tipo de documento': datosEstudiante.tipo_de_documento, // Si el frontend envía 'tipo_de_documento'
-                // 'numero de documento': datosEstudiante.numero_de_documento // Si el frontend envía 'numero_de_documento'
+                
             };
 
             const docRef = await db.collection('estudiantes').add(estudianteData);
@@ -88,11 +71,7 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
             // MODIFICADO: Usar el campo 'nombre' para la búsqueda, según tus datos de Firestore
             if (filtros.busqueda) {
                 const searchTerm = filtros.busqueda.toLowerCase();
-                // Firestore requiere que el campo de búsqueda esté también ordenado en la consulta si no es el primer orderBy
-                // Para búsquedas 'startsWith', Firestore solo soporta una cláusula 'where' en un campo de texto simple.
-                // Si la búsqueda es por nombre, y el nombre es el primer 'orderBy', esto funcionaría.
-                // Si tienes orderBy('fechaCreacion') y luego where('nombre'), necesitarías un índice compuesto en Firebase.
-                // Es crucial que 'nombre' en Firestore esté indexado o uses un índice compuesto.
+                
                 q = q.where("nombre", ">=", searchTerm)
                      .where("nombre", "<=", searchTerm + '\uf8ff');
             }
@@ -104,9 +83,7 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
             const totalCount = totalSnapshot.size;
             console.log('EstudianteService: totalCount de estudiantes (después de filtros):', totalCount);
 
-            // Aplicar paginación y ordenamiento.
-            // Siempre que uses orderBy y where, asegúrate de tener los índices compuestos en Firestore.
-            // Si 'fechaCreacion' no existe en todos los documentos o no está indexado, podría haber problemas.
+            
             q = q.orderBy('fechaCreacion', 'desc')
                  .limit(pageSize)
                  .offset((page - 1) * pageSize);
@@ -173,8 +150,7 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
     const actualizarEstudiante = async (id, nuevosDatos) => {
         try {
             const docRef = db.collection("estudiantes").doc(id);
-            // IMPORTANTE: Si actualizas el tipo o número de documento, asegúrate de
-            // que los nombres de los campos en 'nuevosDatos' sean 'tipo de documento' y 'numero de documento'.
+            
             await docRef.update({
                 ...nuevosDatos,
                 fechaActualizacion: new Date()
@@ -242,11 +218,7 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
         }
     };
 
-    /**
-     * Obtiene todos los tipos de documento disponibles.
-     * NOTA: Este es un ejemplo. Podrías tener una colección en Firestore para esto,
-     * o definirlo en tu backend.
-     */
+    
     const obtenerTiposDocumento = async () => {
         return [
             { code: 'CC', name: 'Cédula de Ciudadanía' },
@@ -256,11 +228,6 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
         ];
     };
 
-    /**
-     * Obtiene todas las facultades disponibles.
-     * NOTA: Este es un ejemplo. Podrías tener una colección en Firestore para esto,
-     * o definirlo en tu backend.
-     */
     const obtenerFacultades = async () => {
         return [
             { code: 'ING', name: 'Ingeniería' },

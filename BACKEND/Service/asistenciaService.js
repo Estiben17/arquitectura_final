@@ -1,27 +1,8 @@
 // BACKEND/Service/asistenciaService.js (¡MUY IMPORTANTE: ESTE ES EL SERVICIO DEL BACKEND!)
 
-// =======================================================================================
-// ADVERTENCIA: NO IMPORTAR firebase/app NI firebase/firestore AQUI
-// NO DEBE HABER 'firebaseConfig', 'initializeApp', 'getFirestore', 'collection', 'doc', etc.
-// ESTE ARCHIVO RECIBE 'db' DEL SDK ADMIN.
-// =======================================================================================
 
-// Importa 'admin' si necesitas usar FieldValue.serverTimestamp() o admin.firestore.Timestamp
-// Asegúrate de que 'admin' se exporte desde BACKEND/firebase.js
-// Si solo usas new Date(), no necesitas importar 'admin' aquí.
-// import { admin } from '../firebase.js'; // Descomenta si usas admin.firestore.FieldValue.serverTimestamp()
-
-// =======================================================================================
-// PASO CLAVE: Exporta una FUNCIÓN que "crea" tu servicio y RECIBE 'db' y 'auth'
 export default function createAsistenciaService(db, auth) { // 'db' es la instancia de Firestore del Admin SDK
 
-    // Ya no necesitas 'asistenciasCollection' ni 'estudiantesCollection' globales
-    // porque 'db' es ahora la instancia de Firestore del Admin SDK
-    // y accedes a las colecciones con db.collection('nombre_coleccion')
-
-    /**
-     * Servicio para gestión de asistencias (para el backend)
-     */
     const crearAsistencia = async (datosAsistencia) => {
         try {
             // Validación de datos requeridos

@@ -1,4 +1,4 @@
-import asistenciaApiClient from './apiClient.js'; // CAMBIO CLAVE: Importa el nuevo cliente API
+import asistenciaApiClient from './apiClient.js'; 
 
 document.addEventListener('DOMContentLoaded', () => {
     // Elementos del DOM
@@ -60,9 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fillAttendanceForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Aquí iría la lógica para guardar las asistencias de los estudiantes
-        // Esto probablemente implicará obtener la asistencia por ID, actualizarla con los datos
-        // de los estudiantes y luego llamar a asistenciaApiClient.actualizarAsistencia(id, nuevosDatos)
+       
         
         alert('Asistencias registradas correctamente');
         modals.forEach(modal => modal.style.display = 'none');
@@ -127,9 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // CAMBIO CLAVE: Usa el cliente API de frontend para obtener por ID
             const asistencia = await asistenciaApiClient.obtenerAsistenciaPorId(id);
             if (asistencia) {
-                // Aquí deberías rellenar tu modal de vista con los datos de 'asistencia'
-                // document.getElementById('view-attendance-id').textContent = asistencia.id;
-                // ... y así sucesivamente para los demás campos
+                
                 console.log("Detalles de asistencia:", asistencia); // Para depuración
                 document.getElementById('view-attendance-modal').style.display = 'block';
             } else {
@@ -147,15 +143,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // CAMBIO CLAVE: Usa el cliente API de frontend para obtener y luego actualizar
             const asistenciaToEdit = await asistenciaApiClient.obtenerAsistenciaPorId(id);
             if (asistenciaToEdit) {
-                // Rellena el formulario de edición con 'asistenciaToEdit'
-                // document.getElementById('edit-attendance-code').value = asistenciaToEdit.idAsignatura;
-                // ...
+                
                 document.getElementById('edit-attendance-modal').style.display = 'block'; // Asegúrate de tener este modal
             } else {
                 alert('Asistencia a editar no encontrada.');
             }
-            // Después de que el usuario edite y envíe el formulario de edición,
-            // llamarías a asistenciaApiClient.actualizarAsistencia(id, nuevosDatos)
+           
             
         } catch (error) {
             console.error('Error al editar asistencia:', error);

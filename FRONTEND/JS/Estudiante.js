@@ -85,10 +85,7 @@ function renderStudentsTable(filteredStudents = students) {
         const documentType = getDocumentTypeName(student['tipo de documento']) || 'N/A';
         const documentNumber = student['numero de documento'] || 'N/A';
         const facultyName = getFacultyName(student.facultad) || 'N/A';
-
-        // Asegurarse de que el ID para editar/eliminar sea el ID del documento de Firestore
-        // Asumo que tu apiClient.obtenerEstudiantes ya añade el 'id' del documento de Firestore a cada objeto estudiante
-        const studentId = student.id; // Este 'id' es crucial y debe venir del backend.
+        const studentId = student.id; 
 
         const row = `
             <tr>
@@ -140,13 +137,7 @@ function renderPagination() {
         pagination.appendChild(button);
     }
     
-    // Si quieres los botones de previo/siguiente, puedes añadirlos así:
-    // (Asegúrate de que tus IDs en HTML sean 'btn-prev-page' y 'btn-next-page')
-    // prevButton.disabled = currentPage === 1;
-    // nextButton.disabled = currentPage === totalPages;
-    // pageInfoSpan.textContent = `Página ${currentPage} de ${totalPages}`;
-    // prevButton.onclick = () => { if (currentPage > 1) loadStudents(currentPage - 1); };
-    // nextButton.onclick = () => { if (currentPage < totalPages) loadStudents(currentPage + 1); };
+   
 }
 
 
@@ -320,8 +311,7 @@ async function editStudent(id) {
             form['faculty'].value = student.facultad || '';
             form['program'].value = student.programa || '';
             
-            // Para la fecha de nacimiento: Firestore puede guardarla como un objeto Timestamp.
-            // Necesitas convertirlo a formato YYYY-MM-DD para el input type="date".
+          
             let birthDate = '';
             if (student['Fecha Nacimiento']) {
                 // Suponiendo que Fecha Nacimiento es un objeto Timestamp de Firestore
@@ -386,5 +376,3 @@ function handleSearch() {
 
     renderStudentsTable(filteredStudents);
 }
-
-// Puedes añadir las funciones showError, showSuccess, showToast y sus estilos CSS en tu archivo CSS principal.

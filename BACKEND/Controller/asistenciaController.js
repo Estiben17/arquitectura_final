@@ -1,23 +1,12 @@
 // BACKEND/Controller/asistenciaController.js
 
-// =========================================================================
-// PASO CLAVE: Importa la FUNCIÓN que crea tu servicio de asistencia
 import createAsistenciaService from '../Service/asistenciaService.js';
-// =========================================================================
 
-// =========================================================================
-// PASO CLAVE: Exporta una FUNCIÓN que crea tu controlador de asistencia,
-// y que RECIBE 'db' y 'auth' (del Admin SDK) como argumentos.
 export default function createAsistenciaController(db, auth) {
 
-    // =====================================================================
-    // PASO CLAVE: Instancia tu servicio de asistencia, pasándole 'db' y 'auth'.
+   
     const asistenciaService = createAsistenciaService(db, auth);
-    // =====================================================================
-
-    // Ahora, los métodos del controlador se definen dentro de esta función
-    // y acceden a los métodos del servicio a través de 'asistenciaService'.
-
+    
     const crearAsistencia = async (req, res) => {
         try {
             const nuevaAsistencia = await asistenciaService.crearAsistencia(req.body);
@@ -61,14 +50,12 @@ export default function createAsistenciaController(db, auth) {
         }
     };
 
-    // =====================================================================
-    // PASO CLAVE: Retorna un objeto con todas las funciones controladoras
-    // para que el router pueda acceder a ellas.
+
     return {
         crearAsistencia,
         obtenerAsistencias,
         registrarAsistenciaEstudiante,
         obtenerEstudiantesParaAsistencia
     };
-    // =====================================================================
+    
 }

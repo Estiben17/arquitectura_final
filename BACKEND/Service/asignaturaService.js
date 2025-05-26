@@ -1,6 +1,6 @@
 export default function createAsignaturaService(db, auth) { // 'db' es la instancia de Firestore del Admin SDK
 
-    // Tus funciones de servicio. Ahora 'db' es la que fue INYECTADA
+    // funciones de servicio. Ahora 'db' es la que fue INYECTADA
     const crearAsignatura = async (datosAsignatura) => {
         try {
             if (!datosAsignatura.codigo || !datosAsignatura.nombre) {

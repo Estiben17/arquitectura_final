@@ -173,7 +173,7 @@ const apiClient = {
                 throw new Error(errorData.error || 'Error al obtener estudiantes');
             }
             // Cuando se obtienen estudiantes, también se necesita el total para paginación
-            const totalCount = response.headers.get('X-Total-Count'); // Asegúrate de que tu backend envíe este header
+            const totalCount = response.headers.get('X-Total-Count'); 
             const studentsData = await response.json();
             return {
                 students: studentsData,
@@ -248,7 +248,7 @@ const apiClient = {
     // --- Métodos para Tipos de Documento y Facultades (NUEVOS) ---
     loadDocumentTypes: async () => {
         try {
-            // Asumo que tienes una ruta para esto, si no, deberás crearla en el backend
+            
             const response = await fetch(`${API_BASE_URL}/documentTypes`);
             if (!response.ok) {
                 const errorData = await response.json();
@@ -262,8 +262,8 @@ const apiClient = {
     },
     loadFaculties: async () => {
         try {
-            // Asumo que tienes una ruta para esto, si no, deberás crearla en el backend
-            const response = await fetch(`${API_BASE_URL}/facultades`); // O /faculties, usa la que corresponda
+            
+            const response = await fetch(`${API_BASE_URL}/facultades`); 
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Error al cargar facultades');
@@ -275,8 +275,7 @@ const apiClient = {
         }
     },
 
-    // --- Puedes añadir aquí métodos para Asignaturas si los necesitas en este mismo archivo ---
-    // ...
+    
 };
 
 export default apiClient;

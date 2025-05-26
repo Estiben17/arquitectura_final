@@ -1,17 +1,8 @@
 // BACKEND/Controller/departamentoController.js
 
-// =======================================================================================
-// PASO CLAVE: Importa la FUNCIÓN que crea tu servicio de departamento
-import createDepartamentoService from '../Service/departamentoService.js';
-// Asegúrate de que el 'departamentoService.js' está correcto y no es el de estudiante.
-// Si el archivo 'estudianteService.js' que me subiste antes (con la lógica de departamento)
-// es el que estás usando como 'departamentoService.js', asegúrate de que el nombre del archivo
-// en el disco sea realmente 'departamentoService.js'.
-// =======================================================================================
 
-// =======================================================================================
-// PASO CLAVE: Exporta una FUNCIÓN que "crea" tu controlador de departamento
-// y RECIBE 'db' y 'auth' (del Admin SDK)
+import createDepartamentoService from '../Service/departamentoService.js';
+
 export default function createDepartamentoController(db, auth) {
     // Instancia el servicio de departamento, pasándole 'db' y 'auth'
     const departamentoService = createDepartamentoService(db, auth);
@@ -86,10 +77,7 @@ export default function createDepartamentoController(db, auth) {
     };
 
     /**
-     * Controlador para buscar un estudiante por documento.
-     * NOTA: Esta función es más lógica de estudiante, pero si tu router de departamento
-     * tiene una ruta para esto, el controlador de departamento puede llamarla.
-     * Asegúrate de que tu `departamentoService` tiene `buscarEstudiantePorDocumento`.
+     * 
      * @param {Object} req - Objeto de solicitud de Express (contiene req.query.tipoDocumento, req.query.numeroDocumento).
      * @param {Object} res - Objeto de respuesta de Express.
      */
@@ -112,8 +100,6 @@ export default function createDepartamentoController(db, auth) {
     };
 
 
-    // PASO CLAVE: Retorna un objeto con todas las funciones controladoras
-    // que este módulo proporciona. Estas son las funciones que el router espera.
     return {
         obtenerDepartamentos,
         obtenerDepartamento,

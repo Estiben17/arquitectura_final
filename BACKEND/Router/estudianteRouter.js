@@ -30,8 +30,7 @@ export default function createEstudianteRouter(db, auth) {
         estudianteController.buscarPorDocumento(req, res, next);
     });
 
-    // RUTA GENERAL PARA OBTENER ESTUDIANTES (PARA PAGINACIÓN Y FILTROS)
-    // También asegúrate de que esté ANTES de /estudiantes/:id si usas la misma base.
+   
     router.get('/estudiantes', (req, res, next) => {
         console.log('EstudianteRouter: Ruta /estudiantes (con o sin paginación) alcanzada!');
         estudianteController.obtenerEstudiantes(req, res, next);

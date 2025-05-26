@@ -3,20 +3,12 @@
 import express from 'express';
 import cors from 'cors';
 
-// =========================================================================
-// PASO CLAVE: Importa db y auth desde tu archivo firebase.js (Admin SDK)
 import { db, auth } from './firebase.js';
-// =========================================================================
 
-// =========================================================================
-// PASO CLAVE: Importa las FUNCIONES que crean tus routers
-// Tus archivos de router (ej. asignaturaRouter.js) deben EXPORTAR UNA FUNCIÓN
-// que reciba db y auth, no un objeto Router directamente.
 import createAsignaturaRouter from './Router/asignaturaRouter.js';
 import createAsistenciaRouter from './Router/asistenciaRouter.js';
 import createDepartamentoRouter from './Router/departamentoRouter.js';
 import createEstudianteRouter from './Router/estudianteRouter.js';
-// =========================================================================
 
 const app = express();
 
@@ -24,16 +16,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// =========================================================================
-// >>>>>>>>>> AQUÍ SE AGREGA EL MIDDLEWARE DE LOGGING <<<<<<<<<<
 app.use((req, res, next) => {
     console.log(`[DEBUG] Solicitud entrante: ${req.method} ${req.originalUrl}`);
     next();
 });
-// =========================================================================
 
-// =========================================================================
-// PASO CLAVE: Inicializa los Routers, pasándoles las instancias de db y auth
 console.log('App.js: Montando router de asignaturas...');
 app.use('/api/asignaturas', createAsignaturaRouter(db, auth));
 console.log('App.js: Montando router de asistencias...');

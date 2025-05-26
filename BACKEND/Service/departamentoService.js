@@ -1,10 +1,5 @@
 // BACKEND/Service/departamentoService.js
 
-// =======================================================================================
-// ADVERTENCIA: NO IMPORTAR firebase/app NI firebase/firestore AQUI
-// NO DEBE HABER 'firebaseConfig', 'initializeApp', 'getFirestore', 'collection', 'doc', etc.
-// ESTE ARCHIVO RECIBE 'db' DEL SDK ADMIN.
-// =======================================================================================
 
 export default function createDepartamentoService(db, auth) { // 'db' es la instancia de Firestore del Admin SDK
 
@@ -96,11 +91,6 @@ export default function createDepartamentoService(db, auth) { // 'db' es la inst
             throw new Error(`Error al obtener estadísticas: ${error.message}`);
         }
     };
-
-    // NOTA: 'buscarEstudiantePorDocumento' es más propio del servicio de estudiantes.
-    // Si necesitas esta función para el contexto de un departamento (ej. asignar un estudiante),
-    // podrías considerar inyectar el servicio de estudiantes aquí o hacer una llamada explícita.
-    // Por ahora, lo he eliminado de aquí para evitar la duplicación y mantener la separación de responsabilidades.
 
 
     // Retorna el objeto con los métodos del servicio
