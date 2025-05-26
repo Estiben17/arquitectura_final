@@ -2,29 +2,25 @@
 
 import createEstudianteService from '../Service/estudianteService.js';
 
-export default function createEstudianteController(estudianteService) { // <<-- CAMBIO AQUI: Recibe directamente el servicio
-    // El servicio ya se pasa desde el router, no lo crees aquí de nuevo
-    // const estudianteService = createEstudianteService(db, auth); // ELIMINAR ESTA LINEA
-
-    // =====================================================================
-    // DEFINICIÓN DE LAS FUNCIONES DEL CONTROLADOR
-    // =====================================================================
-
+export default function createEstudianteController(estudianteService) {
     const crearEstudiante = async (req, res) => {
         try {
-            if (!req.body.firstName || !req.body.firstSurname || !req.body.documentType || !req.body.documentNumber) {
-                return res.status(400).json({ error: "Datos incompletos: nombre, apellido, tipo y número de documento son obligatorios." });
+            // Validar con los nombres de propiedades que envía el frontend (Firestore-compatible)
+            if (!req.body.nombre || !req.body.apellido || !req.body['tipo de documento'] || !req.body['numero de documento'] || !req.body.facultad) {
+                // Añadí 'facultad' a la validación aquí para que sea más estricta
+                return res.status(400).json({ error: "Datos incompletos: nombre, apellido, tipo de documento, número de documento y facultad son obligatorios." });
             }
 
             const estudianteData = {
-                ...req.body,
+                ...req.body, // Esto capturará todos los campos que envía el frontend con los nombres de Firestore
+                // Ajustar searchKeywords para usar los nombres de campos de Firestore
                 searchKeywords: [
-                    (req.body.firstName || '').toLowerCase(),
-                    (req.body.secondName || '').toLowerCase(),
-                    (req.body.firstSurname || '').toLowerCase(),
-                    (req.body.secondSurname || '').toLowerCase(),
-                    (req.body.documentNumber || '').toLowerCase()
-                ],
+                    (req.body.nombre || '').toLowerCase(),
+                    (req.body['segundo nombre'] || '').toLowerCase(), // Si existe
+                    (req.body.apellido || '').toLowerCase(),
+                    (req.body['segundo apellido'] || '').toLowerCase(), // Si existe
+                    (req.body['numero de documento'] || '').toLowerCase()
+                ].filter(Boolean), // Elimina elementos vacíos
                 fechaCreacion: new Date(),
                 fechaActualizacion: new Date()
             };
@@ -33,7 +29,12 @@ export default function createEstudianteController(estudianteService) { // <<-- 
             res.status(201).json(nuevoEstudiante);
         } catch (error) {
             console.error('Error en crearEstudiante (Controller):', error);
-            res.status(500).json({ error: "Error al crear estudiante", details: error.message });
+            // Si el error ya es un 400, no lo envuelvas en un 500 genérico.
+            if (res.statusCode === 400) { // Si ya hemos enviado un 400 en la validación inicial
+                res.json({ error: error.message || "Error al crear estudiante" });
+            } else {
+                res.status(500).json({ error: "Error al crear estudiante", details: error.message });
+            }
         }
     };
 
@@ -49,8 +50,8 @@ export default function createEstudianteController(estudianteService) { // <<-- 
 
             const { students, totalCount } = await estudianteService.obtenerEstudiantes(filtros, pagina, limite);
 
-            res.set('X-Total-Count', totalCount); 
-            
+            res.set('X-Total-Count', totalCount);
+
             res.status(200).json(students);
         } catch (error) {
             console.error('Error en obtenerEstudiantes (Controller):', error);
@@ -70,14 +71,15 @@ export default function createEstudianteController(estudianteService) { // <<-- 
                 fechaActualizacion: new Date()
             };
 
-            if (req.body.firstName || req.body.secondName || req.body.firstSurname || req.body.secondSurname || req.body.documentNumber) {
+            // Asegúrate de que los campos para searchKeywords también usen los nombres de Firestore
+            if (req.body.nombre || req.body.apellido || req.body['numero de documento'] || req.body['segundo nombre'] || req.body['segundo apellido']) {
                 updateData.searchKeywords = [
-                    (req.body.firstName || '').toLowerCase(),
-                    (req.body.secondName || '').toLowerCase(),
-                    (req.body.firstSurname || '').toLowerCase(),
-                    (req.body.secondSurname || '').toLowerCase(),
-                    (req.body.documentNumber || '').toLowerCase()
-                ];
+                    (req.body.nombre || '').toLowerCase(),
+                    (req.body['segundo nombre'] || '').toLowerCase(),
+                    (req.body.apellido || '').toLowerCase(),
+                    (req.body['segundo apellido'] || '').toLowerCase(),
+                    (req.body['numero de documento'] || '').toLowerCase()
+                ].filter(Boolean);
             }
 
             await estudianteService.actualizarEstudiante(id, updateData);
@@ -89,9 +91,9 @@ export default function createEstudianteController(estudianteService) { // <<-- 
     };
 
     const buscarPorDocumento = async (req, res) => {
-        console.log('EstudianteController: Método buscarPorDocumento ejecutado.'); 
+        console.log('EstudianteController: Método buscarPorDocumento ejecutado.');
         try {
-            const { tipo, numero } = req.query;
+            const { tipo, numero } = req.query; // Estos son 'tipo' y 'numero' como strings en la URL
 
             if (!tipo || !numero) {
                 return res.status(400).json({
@@ -158,11 +160,6 @@ export default function createEstudianteController(estudianteService) { // <<-- 
         }
     };
 
-    // =====================================================================
-    // ¡NUEVOS MÉTODOS NECESARIOS!
-    // Estos son los que tu frontend está esperando.
-    // =====================================================================
-
     const getTiposDocumento = async (req, res) => {
         try {
             const tipos = await estudianteService.obtenerTiposDocumento();
@@ -183,10 +180,6 @@ export default function createEstudianteController(estudianteService) { // <<-- 
         }
     };
 
-    // =====================================================================
-    // RETORNO DEL OBJETO CONTROLADOR
-    // Asegúrate de que todos los métodos que quieres exponer estén aquí.
-    // =====================================================================
     return {
         crearEstudiante,
         obtenerEstudiantes,
@@ -194,7 +187,7 @@ export default function createEstudianteController(estudianteService) { // <<-- 
         buscarPorDocumento,
         obtenerEstudiantePorId,
         eliminarEstudiante,
-        getTiposDocumento, // <<-- AÑADIDO
-        getFacultades     // <<-- AÑADIDO
+        getTiposDocumento,
+        getFacultades
     };
 }

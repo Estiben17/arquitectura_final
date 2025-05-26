@@ -1,10 +1,11 @@
+// JS/Departamento.js
+
 import apiClient from './apiClient.js'; // Importa el cliente API
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Script Departamento.js cargado');
 
     // Variable global para almacenar el ID del departamento actualmente seleccionado.
-    // Esto es CRUCIAL para saber qué departamento se va a editar o consultar.
     let currentSelectedDepartmentId = null;
 
     // --- Elementos del DOM ---
@@ -20,8 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeButtons = document.querySelectorAll('.close-modal'); // Botones genéricos de cerrar modal
 
     // Elementos de búsqueda y filtro de departamentos
-    const departmentSearchInput = document.getElementById('department-search'); // Renombrado para claridad
-    const departmentFilterSelect = document.getElementById('department-filter'); // Renombrado para claridad
+    const departmentSearchInput = document.getElementById('department-search');
+    const departmentFilterSelect = document.getElementById('department-filter');
 
     // Formulario de edición de departamento
     const departmentForm = document.getElementById('department-form');
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const departmentIdDisplay = document.getElementById('department-id-display');
     const departmentCodeDisplay = document.getElementById('department-code');
     const departmentNameDisplay = document.getElementById('department-name-display');
+    // >>>>>>>>>> LÍNEA CORREGIDA AQUÍ <<<<<<<<<<
     const departmentCreationDateDisplay = document.getElementById('department-creation-date-display');
     const departmentUpdateDateDisplay = document.getElementById('department-update-date-display');
     const departmentStatusDisplay = document.getElementById('department-status-display');
@@ -53,39 +55,74 @@ document.addEventListener('DOMContentLoaded', () => {
     const studentSearchResultDiv = document.getElementById('student-search-result');
     const noStudentResultsDiv = document.getElementById('no-student-results');
 
-    // --- Verificación y Event Listeners ---
-    if (!btnViewDepartment || !btnEditDepartment || !btnSearchStudent || !viewDepartmentModal || !editDepartmentModal || !departmentSearchInput || !departmentFilterSelect || !departmentForm) {
-        console.error('Error: No se encontraron algunos elementos DOM esenciales. Verifica los IDs en tu HTML.');
-        return; // Detener la ejecución si no se encuentran elementos clave
-    }
+    // Elementos de la tarjeta de información del estudiante (asegúrate de que estos IDs existan en tu HTML)
+    const studentIdDisplay = document.getElementById('student-id');
+    const studentNameDisplay = document.getElementById('student-name');
+    const studentBirthdateDisplay = document.getElementById('student-birthdate');
+    const studentGenderDisplay = document.getElementById('student-gender');
+    const studentFacultyDisplay = document.getElementById('student-faculty');
+    const studentProgramDisplay = document.getElementById('student-program');
+    const studentSemesterDisplay = document.getElementById('student-semester');
+    const studentAverageDisplay = document.getElementById('student-average');
+    const studentEmailDisplay = document.getElementById('student-email');
+    const studentPhoneDisplay = document.getElementById('student-phone');
+    const studentAddressDisplay = document.getElementById('student-address');
+    const studentStatusDisplay = document.getElementById('student-status');
 
-    console.log('Elementos DOM esenciales encontrados y listos.');
 
-    // Event Listeners para botones de acción principal
-    btnViewDepartment.addEventListener('click', mostrarModalVerDepartamento);
-    btnEditDepartment.addEventListener('click', mostrarModalEditarDepartamento);
-    btnSearchStudent.addEventListener('click', buscarEstudiante);
+    // --- Verificación de elementos DOM esenciales (para depuración) ---
+    const essentialDepartmentElements = [
+        btnViewDepartment, btnEditDepartment, viewDepartmentModal, editDepartmentModal,
+        departmentSearchInput, departmentFilterSelect, departmentForm,
+        departmentIdDisplay, departmentCodeDisplay, departmentNameDisplay,
+        departmentCreationDateDisplay, departmentUpdateDateDisplay, departmentStatusDisplay,
+        departmentDirectorDisplay, departmentDescriptionDisplay, totalStudentsDisplay,
+        totalProfessorsDisplay, totalSubjectsDisplay, editDepartmentIdInput,
+        editDepartmentCodeInput, editDepartmentNameInput, editDepartmentDirectorInput,
+        editDepartmentStatusSelect, editDepartmentDescriptionInput
+    ];
+    essentialDepartmentElements.forEach(el => {
+        if (!el) console.warn('Elemento DOM de departamento no encontrado:', el);
+    });
 
-    // Cerrar modales (delegado a un solo handler)
+    const essentialStudentElements = [
+        btnSearchStudent, studentDocumentTypeInput, studentIdInput,
+        studentSearchResultDiv, noStudentResultsDiv, studentIdDisplay,
+        studentNameDisplay, studentBirthdateDisplay, studentGenderDisplay,
+        studentFacultyDisplay, studentProgramDisplay, studentSemesterDisplay,
+        studentAverageDisplay, studentEmailDisplay, studentPhoneDisplay,
+        studentAddressDisplay, studentStatusDisplay
+    ];
+    essentialStudentElements.forEach(el => {
+        if (!el) console.warn('Elemento DOM de estudiante no encontrado:', el);
+    });
+
+    console.log('Verificación inicial de elementos DOM completada.');
+
+    // --- Event Listeners ---
+    if (btnViewDepartment) btnViewDepartment.addEventListener('click', mostrarModalVerDepartamento);
+    if (btnEditDepartment) btnEditDepartment.addEventListener('click', mostrarModalEditarDepartamento);
+    if (btnSearchStudent) btnSearchStudent.addEventListener('click', buscarEstudiante);
+
     closeButtons.forEach(button => {
         button.addEventListener('click', cerrarModales);
     });
 
-    // Búsqueda y filtrado de departamentos
-    departmentSearchInput.addEventListener('input', buscarDepartamentos);
-    departmentFilterSelect.addEventListener('change', buscarDepartamentos);
+    if (departmentSearchInput) departmentSearchInput.addEventListener('input', buscarDepartamentos);
+    if (departmentFilterSelect) departmentFilterSelect.addEventListener('change', buscarDepartamentos);
 
-    // Envío del formulario de edición de departamento
-    departmentForm.addEventListener('submit', (e) => {
-        e.preventDefault(); // Evita el envío tradicional del formulario
-        enviarFormularioEdicion(); // La función misma maneja errores
-    });
+    if (departmentForm) {
+        departmentForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            enviarFormularioEdicion();
+        });
+    }
 
     // --- Inicialización de la aplicación ---
-    inicializarAplicacion(); // La función misma maneja errores
+    inicializarAplicacion();
 
     // --------------------------
-    // Funciones principales
+    // Funciones de Departamento
     // --------------------------
 
     /**
@@ -94,17 +131,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function inicializarAplicacion() {
         console.log('Inicializando aplicación...');
         try {
-            const departamentos = await apiClient.obtenerDepartamentos({});
+            // **IMPORTANTE:** Asume que apiClient.obtenerDepartamentos devuelve directamente el array.
+            const departamentos = await apiClient.obtenerDepartamentos({}); 
             console.log('Departamentos obtenidos en inicialización:', departamentos);
 
             if (departamentos && departamentos.length > 0) {
-                // Selecciona el primer departamento por defecto y carga sus datos en la sección principal
                 await cargarDepartamentoSeleccionado(departamentos[0].id);
             } else {
                 console.log('No se encontraron departamentos al inicio.');
-                // Opcional: mostrar un mensaje en la UI de que no hay departamentos
             }
-            // Muestra la lista completa de departamentos en la tabla
             await mostrarListadoDepartamentos(departamentos);
 
         } catch (error) {
@@ -123,27 +158,31 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const departamento = await apiClient.obtenerDepartamentoPorId(id);
             if (departamento) {
-                // Almacena el ID del departamento seleccionado globalmente
                 currentSelectedDepartmentId = departamento.id;
                 console.log('Departamento seleccionado actualizado globalmente:', currentSelectedDepartmentId);
 
                 // Actualiza la información en la sección principal del HTML
-                // Se agregó `|| 'N/A'` para manejar casos donde el campo podría estar ausente
-                departmentIdDisplay.textContent = departamento.id; 
-                departmentCodeDisplay.textContent = departamento.codigo || 'N/A';
-                departmentNameDisplay.textContent = departamento.nombre || 'N/A';
-                departmentCreationDateDisplay.textContent = departamento.fechaCreacion ? new Date(departamento.fechaCreacion).toLocaleDateString() : 'N/A';
-                departmentUpdateDateDisplay.textContent = departamento.fechaActualizacion ? new Date(departamento.fechaActualizacion).toLocaleDateString() : 'N/A';
-                departmentStatusDisplay.textContent = departamento.estado || 'N/A';
-                departmentStatusDisplay.className = `status-badge ${departamento.estado === 'Activo' ? 'active' : 'inactive'}`; // Actualiza la clase del badge
-                departmentDirectorDisplay.textContent = departamento.director || 'N/A';
-                departmentDescriptionDisplay.textContent = departamento.descripcion || 'N/A';
+                if (departmentIdDisplay) departmentIdDisplay.textContent = departamento.id || 'N/A';
+                if (departmentCodeDisplay) departmentCodeDisplay.textContent = departamento.codigo || 'N/A';
+                if (departmentNameDisplay) departmentNameDisplay.textContent = departamento.nombre || 'N/A';
+                if (departmentCreationDateDisplay) {
+                    departmentCreationDateDisplay.textContent = departamento.fechaCreacion ? new Date(departamento.fechaCreacion).toLocaleDateString() : 'N/A';
+                }
+                if (departmentUpdateDateDisplay) {
+                    departmentUpdateDateDisplay.textContent = departamento.fechaActualizacion ? new Date(departamento.fechaActualizacion).toLocaleDateString() : 'N/A';
+                }
+                if (departmentStatusDisplay) {
+                    departmentStatusDisplay.textContent = departamento.estado || 'N/A';
+                    departmentStatusDisplay.className = `status-badge ${departamento.estado === 'Activo' ? 'active' : 'inactive'}`;
+                }
+                if (departmentDirectorDisplay) departmentDirectorDisplay.textContent = departamento.director || 'N/A';
+                if (departmentDescriptionDisplay) departmentDescriptionDisplay.textContent = departamento.descripcion || 'N/A';
 
-                // Cargar estadísticas relacionadas con el departamento
+                // Cargar estadísticas relacionadas con el departamento (Asegúrate de que tu apiClient y backend tengan este método)
                 const stats = await apiClient.obtenerEstadisticasDepartamento(id);
-                totalStudentsDisplay.textContent = stats.totalEstudiantes !== undefined ? stats.totalEstudiantes : 0;
-                totalProfessorsDisplay.textContent = stats.totalProfesores !== undefined ? stats.totalProfesores : 0;
-                totalSubjectsDisplay.textContent = stats.totalAsignaturas !== undefined ? stats.totalAsignaturas : 0;
+                if (totalStudentsDisplay) totalStudentsDisplay.textContent = stats.totalEstudiantes !== undefined ? stats.totalEstudiantes : 0;
+                if (totalProfessorsDisplay) totalProfessorsDisplay.textContent = stats.totalProfesores !== undefined ? stats.totalProfesores : 0;
+                if (totalSubjectsDisplay) totalSubjectsDisplay.textContent = stats.totalAsignaturas !== undefined ? stats.totalAsignaturas : 0;
 
             } else {
                 mostrarNotificacion('Departamento no encontrado para el ID: ' + id, 'error');
@@ -163,6 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const busqueda = departmentSearchInput.value;
             const estado = departmentFilterSelect.value;
+            // **IMPORTANTE:** Asume que apiClient.obtenerDepartamentos devuelve directamente el array.
             const departamentos = await apiClient.obtenerDepartamentos({ busqueda, estado });
             mostrarListadoDepartamentos(departamentos);
         } catch (error) {
@@ -195,10 +235,8 @@ document.addEventListener('DOMContentLoaded', () => {
             await apiClient.actualizarDepartamento(currentSelectedDepartmentId, nuevosDatos);
             mostrarNotificacion('Departamento actualizado correctamente', 'success');
             cerrarModales();
-            // Después de actualizar, recarga la información del departamento en la sección principal
             await cargarDepartamentoSeleccionado(currentSelectedDepartmentId);
-            // Y recarga la lista de departamentos para reflejar los cambios
-            await buscarDepartamentos();
+            await buscarDepartamentos(); // Recarga la lista para reflejar cambios
         } catch (error) {
             console.error('Error al actualizar departamento:', error);
             mostrarNotificacion(`Error al actualizar departamento: ${error.message}`, 'error');
@@ -216,19 +254,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Aquí podrías opcionalmente recargar los datos del departamento para asegurar que sean los más recientes,
-        // pero por simplicidad, asumimos que 'cargarDepartamentoSeleccionado' ya actualizó los `span` principales.
-        // Si el modal tiene sus propios campos y no solo réplicas de los principales, necesitarías precargar el modal de vista aquí.
-        
-        // Asigna los valores a los elementos del modal de vista
-        document.getElementById('view-department-code').textContent = departmentCodeDisplay.textContent;
-        document.getElementById('view-department-name').textContent = departmentNameDisplay.textContent;
-        document.getElementById('view-department-date').textContent = departmentCreationDateDisplay.textContent;
-        document.getElementById('view-department-status').textContent = departmentStatusDisplay.textContent;
-        document.getElementById('view-department-status').className = departmentStatusDisplay.className; // Copiar la clase del estado
-        document.getElementById('view-department-director').textContent = departmentDirectorDisplay.textContent;
-        document.getElementById('view-department-description').textContent = departmentDescriptionDisplay.textContent;
-
+        // Rellena los campos del modal de vista con la información de la sección principal
+        // Esto asume que la sección principal ya tiene los datos más recientes.
+        if (document.getElementById('view-department-code')) document.getElementById('view-department-code').textContent = departmentCodeDisplay.textContent;
+        if (document.getElementById('view-department-name')) document.getElementById('view-department-name').textContent = departmentNameDisplay.textContent;
+        if (document.getElementById('view-department-date')) document.getElementById('view-department-date').textContent = departmentCreationDateDisplay.textContent;
+        if (document.getElementById('view-department-status')) {
+            document.getElementById('view-department-status').textContent = departmentStatusDisplay.textContent;
+            document.getElementById('view-department-status').className = departmentStatusDisplay.className;
+        }
+        if (document.getElementById('view-department-director')) document.getElementById('view-department-director').textContent = departmentDirectorDisplay.textContent;
+        if (document.getElementById('view-department-description')) document.getElementById('view-department-description').textContent = departmentDescriptionDisplay.textContent;
 
         if (viewDepartmentModal) {
             viewDepartmentModal.style.display = 'block';
@@ -255,12 +291,12 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Datos del departamento obtenidos para edición:', departamento);
             if (departamento) {
                 // Rellenar los campos del formulario de edición del modal
-                editDepartmentIdInput.value = departamento.id; // Campo oculto del ID
-                editDepartmentCodeInput.value = departamento.codigo || '';
-                editDepartmentNameInput.value = departamento.nombre || '';
-                editDepartmentDirectorInput.value = departamento.director || '';
-                editDepartmentStatusSelect.value = departamento.estado || 'Activo'; // Valor predeterminado
-                editDepartmentDescriptionInput.value = departamento.descripcion || '';
+                if (editDepartmentIdInput) editDepartmentIdInput.value = departamento.id || '';
+                if (editDepartmentCodeInput) editDepartmentCodeInput.value = departamento.codigo || '';
+                if (editDepartmentNameInput) editDepartmentNameInput.value = departamento.nombre || '';
+                if (editDepartmentDirectorInput) editDepartmentDirectorInput.value = departamento.director || '';
+                if (editDepartmentStatusSelect) editDepartmentStatusSelect.value = departamento.estado || 'Activo';
+                if (editDepartmentDescriptionInput) editDepartmentDescriptionInput.value = departamento.descripcion || '';
 
                 if (editDepartmentModal) {
                     editDepartmentModal.style.display = 'block';
@@ -311,15 +347,18 @@ document.addEventListener('DOMContentLoaded', () => {
             tableBody.appendChild(row);
         });
 
-        // Añadir event listeners a los nuevos botones "Seleccionar"
         document.querySelectorAll('.select-department-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 const id = e.target.dataset.id;
-                cargarDepartamentoSeleccionado(id); // Al hacer clic, carga los datos de ese departamento en la sección principal
+                cargarDepartamentoSeleccionado(id);
                 mostrarNotificacion('Departamento seleccionado.', 'info');
             });
         });
     }
+
+    // --------------------------
+    // Funciones de Estudiante
+    // --------------------------
 
     /**
      * Busca un estudiante por tipo y número de documento y muestra sus detalles.
@@ -327,8 +366,16 @@ document.addEventListener('DOMContentLoaded', () => {
     async function buscarEstudiante() {
         console.log('Buscando estudiante...');
         try {
-            if (!studentDocumentTypeInput || !studentIdInput || !studentSearchResultDiv || !noStudentResultsDiv) {
-                console.error('Error: No se encontraron todos los elementos para la búsqueda de estudiantes.');
+            // Asegúrate de que todos los elementos DOM necesarios existan
+            const requiredStudentElements = [
+                studentDocumentTypeInput, studentIdInput, studentSearchResultDiv, noStudentResultsDiv,
+                studentIdDisplay, studentNameDisplay, studentBirthdateDisplay, studentGenderDisplay,
+                studentFacultyDisplay, studentProgramDisplay, studentSemesterDisplay, studentAverageDisplay,
+                studentEmailDisplay, studentPhoneDisplay, studentAddressDisplay, studentStatusDisplay
+            ];
+            const allElementsFound = requiredStudentElements.every(el => el !== null);
+            if (!allElementsFound) {
+                console.error('Error: No se encontraron todos los elementos DOM para la visualización de datos de estudiante.');
                 mostrarNotificacion('Error interno al buscar estudiante. Faltan elementos DOM.', 'error');
                 return;
             }
@@ -339,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!tipoDocumento || !numeroDocumento) {
                 mostrarNotificacion('Por favor, ingrese tipo y número de documento para buscar.', 'warning');
                 studentSearchResultDiv.style.display = 'none';
-                noStudentResultsDiv.style.display = 'block'; // Mostrar mensaje de "no resultados" inicial
+                noStudentResultsDiv.style.display = 'block';
                 return;
             }
 
@@ -348,26 +395,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const estudiante = await apiClient.buscarEstudiantePorDocumento(tipoDocumento, numeroDocumento);
 
             if (estudiante) {
+                console.log('Estudiante recibido del backend:', estudiante);
+                
                 // Rellenar la información del estudiante en la tarjeta de resultados
-                document.getElementById('student-id').textContent = estudiante.numeroDocumento || 'N/A';
-                document.getElementById('student-name').textContent = `${estudiante.nombre || ''} ${estudiante.apellidos || ''}`.trim();
-                document.getElementById('student-birthdate').textContent = estudiante.fechaNacimiento ? new Date(estudiante.fechaNacimiento).toLocaleDateString() : 'N/A';
-                document.getElementById('student-gender').textContent = estudiante.genero || 'N/A';
-                document.getElementById('student-faculty').textContent = estudiante.facultad || 'N/A';
-                document.getElementById('student-program').textContent = estudiante.programa || 'N/A';
-                document.getElementById('student-semester').textContent = estudiante.semestre || 'N/A';
-                document.getElementById('student-average').textContent = estudiante.promedioNotas !== undefined ? estudiante.promedioNotas.toFixed(2) : 'N/A';
-                document.getElementById('student-email').textContent = estudiante.email || 'N/A';
-                document.getElementById('student-phone').textContent = estudiante.telefono || 'N/A';
-                document.getElementById('student-address').textContent = estudiante.direccion || 'N/A';
-                document.getElementById('student-status').textContent = estudiante.estado || 'N/A';
-                document.getElementById('student-status').className = `status-badge ${estudiante.estado === 'Activo' ? 'active' : 'inactive'}`;
+                // Nombres de campo ajustados para coincidir con Firestore / backend
+                studentIdDisplay.textContent = estudiante["numero de documento"] || 'N/A';
+                studentNameDisplay.textContent = `${estudiante.nombre || ''} ${estudiante.apellido || ''}`.trim();
+                studentBirthdateDisplay.textContent = estudiante["Fecha Nacimiento"] ? new Date(estudiante["Fecha Nacimiento"]).toLocaleDateString() : 'N/A';
+                studentGenderDisplay.textContent = estudiante.Género || 'N/A';
+                studentFacultyDisplay.textContent = estudiante.facultad || 'N/A';
+                studentProgramDisplay.textContent = estudiante.programa || 'N/A';
+                studentSemesterDisplay.textContent = estudiante.Semestre || 'N/A';
+                studentAverageDisplay.textContent = estudiante.Promedio !== undefined ? estudiante.Promedio.toFixed(2) : 'N/A';
+                studentEmailDisplay.textContent = estudiante.Email || 'N/A';
+                studentPhoneDisplay.textContent = estudiante.Teléfono || 'N/A';
+                studentAddressDisplay.textContent = estudiante.Direccion || 'N/A'; 
+                studentStatusDisplay.textContent = estudiante.estado || 'N/A';
+                studentStatusDisplay.className = `status-badge ${estudiante.estado === 'Activo' ? 'active' : 'inactive'}`;
 
                 studentSearchResultDiv.style.display = 'block';
                 noStudentResultsDiv.style.display = 'none';
                 mostrarNotificacion('Estudiante encontrado.', 'success');
             } else {
-                // Si no se encuentra, ocultar resultados y mostrar mensaje de no resultados
                 studentSearchResultDiv.style.display = 'none';
                 noStudentResultsDiv.style.display = 'block';
                 mostrarNotificacion('Estudiante no encontrado.', 'info');
@@ -377,6 +426,10 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarNotificacion(`Error al buscar estudiante: ${error.message}`, 'error');
         }
     }
+
+    // --------------------------
+    // Funciones de Utilidad
+    // --------------------------
 
     /**
      * Cierra todos los modales abiertos.

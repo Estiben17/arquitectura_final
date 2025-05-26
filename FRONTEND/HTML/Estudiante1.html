@@ -32,25 +32,15 @@
 
         <div class="students-filters">
           <div class="filter-group">
-            <label for="filter-department">Facultad:</label>
-            <select id="filter-department">
-              <option value="all">Todos</option>
-            </select>
+            <label for="filter-faculty">Facultad:</label> <select id="filter-faculty"> <option value="">Todos</option>
+              </select>
           </div>
           <div class="filter-group">
-            <label for="filter-doc-type">Tipo Documento:</label>
-            <select id="filter-doc-type">
-              <option value="all">Todos</option>
-              <option value="CC">Cédula</option>
-              <option value="TI">Tarjeta Identidad</option>
-              <option value="CE">Cédula Extranjería</option>
-              <option value="Pasaporte">Pasaporte</option>
-            </select>
+            <label for="filter-document-type">Tipo Documento:</label> <select id="filter-document-type"> <option value="">Todos</option>
+              </select>
           </div>
           <div class="search-box">
-            <input type="text" id="student-search" placeholder="Buscar estudiante..." />
-            <button class="btn-search" id="btn-search"><i class="fas fa-search"></i></button>
-          </div>
+            <input type="text" id="search" placeholder="Buscar estudiante..." /> <button class="btn-search" id="btn-search-student-filter"><i class="fas fa-search"></i></button> </div>
         </div>
 
         <table class="data-table students-table">
@@ -66,10 +56,9 @@
           <tbody id="students-table-body"></tbody>
         </table>
 
-        <div class="table-pagination" id="pagination">  <button class="btn-pagination" id="btn-prev"><i class="fas fa-chevron-left"></i></button>
-          <span class="page-info" id="page-info">Página 1 de 1</span>
-          <button class="btn-pagination" id="btn-next"><i class="fas fa-chevron-right"></i></button>
-        </div>
+        <div class="table-pagination" id="pagination">
+          <button class="btn-pagination" id="btn-prev-page"><i class="fas fa-chevron-left"></i></button> <span class="page-info" id="page-info">Página 1 de 1</span>
+          <button class="btn-pagination" id="btn-next-page"><i class="fas fa-chevron-right"></i></button> </div>
 
         <div class="no-results" id="no-results" style="display: none;">
           <p>No se encontraron estudiantes.</p>
@@ -78,7 +67,6 @@
     </main>
   </div>
 
-  <!-- Modal para agregar/editar estudiantes -->
   <div class="modal" id="student-modal" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <span class="close-modal" role="button" aria-label="Cerrar modal">&times;</span>
@@ -86,40 +74,89 @@
       <form id="student-form" autocomplete="off">
         <div class="form-row">
           <div class="form-group">
-            <label for="student-first-name">Nombres:</label>
-            <input type="text" id="student-first-name" name="firstName" required />
+            <label for="first-name">Primer Nombre:</label> <input type="text" id="first-name" name="first-name" required />
           </div>
           <div class="form-group">
-            <label for="student-last-name">Apellidos:</label>
-            <input type="text" id="student-last-name" name="lastName" required />
+            <label for="second-name">Segundo Nombre:</label> <input type="text" id="second-name" name="second-name" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="student-doc-type">Tipo de Documento:</label>
-            <select id="student-doc-type" name="docType" required>
+            <label for="first-surname">Primer Apellido:</label> <input type="text" id="first-surname" name="first-surname" required />
+          </div>
+          <div class="form-group">
+            <label for="second-surname">Segundo Apellido:</label> <input type="text" id="second-surname" name="second-surname" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="document-type">Tipo de Documento:</label> <select id="document-type" name="document-type" required>
               <option value="" disabled selected>Seleccione un tipo de documento</option>
-              <option value="CC">Cédula</option>
-              <option value="TI">Tarjeta Identidad</option>
-              <option value="CE">Cédula Extranjería</option>
-              <option value="Pasaporte">Pasaporte</option>
-            </select>
+              </select>
           </div>
           <div class="form-group">
-            <label for="student-doc-number">Número de Documento:</label>
-            <input type="text" id="student-doc-number" name="docNumber" required />
+            <label for="document-number">Número de Documento:</label> <input type="text" id="document-number" name="document-number" required />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="student-faculty">Facultad:</label>
-            <select id="student-faculty" name="faculty" required>
+            <label for="faculty">Facultad:</label> <select id="faculty" name="faculty" required>
               <option value="" disabled selected>Seleccione una facultad</option>
+              </select>
+          </div>
+          <div class="form-group">
+            <label for="program">Programa:</label> <input type="text" id="program" name="program" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="birth-date">Fecha de Nacimiento:</label> <input type="date" id="birth-date" name="birth-date" />
+          </div>
+          <div class="form-group">
+            <label for="gender">Género:</label> <select id="gender" name="gender">
+              <option value="" disabled selected>Seleccione</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Femenino">Femenino</option>
+              <option value="Otro">Otro</option>
             </select>
           </div>
         </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="semester">Semestre:</label> <input type="number" id="semester" name="semester" min="1" max="12" />
+          </div>
+          <div class="form-group">
+            <label for="average">Promedio:</label> <input type="number" id="average" name="average" step="0.01" min="0" max="5" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">Email:</label> <input type="email" id="email" name="email" />
+          </div>
+          <div class="form-group">
+            <label for="phone">Teléfono:</label> <input type="tel" id="phone" name="phone" />
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="address">Dirección:</label> <input type="text" id="address" name="address" />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="status">Estado:</label> <select id="status" name="status">
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+            <option value="Graduado">Graduado</option>
+            <option value="Retirado">Retirado</option>
+          </select>
+        </div>
+
 
         <div class="form-actions">
           <button type="button" class="btn btn-cancel close-modal">Cancelar</button>
@@ -132,4 +169,3 @@
   <script type="module" src="../JS/Estudiante.js"></script>
 </body>
 </html>
-    

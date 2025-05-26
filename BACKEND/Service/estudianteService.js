@@ -25,7 +25,9 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
     const crearEstudiante = async (datosEstudiante) => {
         try {
             // Validación de datos requeridos (ejemplo)
-            if (!datosEstudiante.firstName || !datosEstudiante.firstSurname || !datosEstudiante.documentNumber) {
+            // Asegúrate de que los nombres de los campos aquí coincidan con lo que tu frontend envía
+            // y con lo que deseas guardar en Firestore (ej. 'nombre' y 'apellido').
+            if (!datosEstudiante.nombre || !datosEstudiante.apellido || !datosEstudiante.numero_de_documento) {
                 throw new Error("Nombre, apellido y número de documento son campos obligatorios para el estudiante.");
             }
 
@@ -35,13 +37,11 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
                 fechaActualizacion: new Date(),
                 estado: datosEstudiante.estado || "activo", // Por defecto 'activo'
                 asignaturas: datosEstudiante.asignaturas || [], // Array para IDs de asignaturas
-                // IMPORTANTE: Cuando crees estudiantes, asegúrate de que los datos de documento
-                // que envías aquí coincidan con 'tipo de documento' y 'numero de documento'
-                // si quieres usar la misma convención que ya tienes en Firestore.
-                // Si el frontend envía 'documentType' y 'documentNumber', debes mapearlos aquí.
-                // Por ejemplo:
-                // 'tipo de documento': datosEstudiante.documentType,
-                // 'numero de documento': datosEstudiante.documentNumber
+                // Los campos como 'tipo de documento' y 'numero de documento'
+                // deben venir correctamente nombrados desde datosEstudiante si el frontend los envía así.
+                // Ejemplo:
+                // 'tipo de documento': datosEstudiante.tipo_de_documento, // Si el frontend envía 'tipo_de_documento'
+                // 'numero de documento': datosEstudiante.numero_de_documento // Si el frontend envía 'numero_de_documento'
             };
 
             const docRef = await db.collection('estudiantes').add(estudianteData);
@@ -67,9 +67,11 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
      * @returns {Promise<Object>} Objeto con lista de estudiantes y totalCount.
      */
     const obtenerEstudiantes = async (filtros = {}, page = 1, pageSize = 5) => {
+        console.log('EstudianteService: Invocando obtenerEstudiantes con filtros:', filtros, 'pagina:', page, 'tamaño:', pageSize);
         try {
             let q = db.collection('estudiantes');
 
+            // Aplicar filtros si existen
             if (filtros.idDepartamento && filtros.idDepartamento !== 'all') {
                 q = q.where("idDepartamento", "==", filtros.idDepartamento);
             }
@@ -83,23 +85,38 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
                 // CORREGIDO: Asegura que el nombre del campo coincida con Firestore
                 q = q.where("tipo de documento", "==", filtros.tipoDocumento);
             }
+            // MODIFICADO: Usar el campo 'nombre' para la búsqueda, según tus datos de Firestore
             if (filtros.busqueda) {
                 const searchTerm = filtros.busqueda.toLowerCase();
-                q = q.where("firstName", ">=", searchTerm)
-                     .where("firstName", "<=", searchTerm + '\uf8ff');
+                // Firestore requiere que el campo de búsqueda esté también ordenado en la consulta si no es el primer orderBy
+                // Para búsquedas 'startsWith', Firestore solo soporta una cláusula 'where' en un campo de texto simple.
+                // Si la búsqueda es por nombre, y el nombre es el primer 'orderBy', esto funcionaría.
+                // Si tienes orderBy('fechaCreacion') y luego where('nombre'), necesitarías un índice compuesto en Firebase.
+                // Es crucial que 'nombre' en Firestore esté indexado o uses un índice compuesto.
+                q = q.where("nombre", ">=", searchTerm)
+                     .where("nombre", "<=", searchTerm + '\uf8ff');
             }
 
+            console.log('EstudianteService: Consulta Firestore construida antes de totalSnapshot. Filters applied:', Object.keys(filtros).length > 0);
+
+            // Obtener el conteo total de documentos antes de aplicar paginación
             const totalSnapshot = await q.get();
             const totalCount = totalSnapshot.size;
+            console.log('EstudianteService: totalCount de estudiantes (después de filtros):', totalCount);
 
-            const offset = (page - 1) * pageSize;
+            // Aplicar paginación y ordenamiento.
+            // Siempre que uses orderBy y where, asegúrate de tener los índices compuestos en Firestore.
+            // Si 'fechaCreacion' no existe en todos los documentos o no está indexado, podría haber problemas.
             q = q.orderBy('fechaCreacion', 'desc')
                  .limit(pageSize)
-                 .offset(offset);
+                 .offset((page - 1) * pageSize);
+
+            console.log('EstudianteService: Consulta Firestore final con paginación construida.');
 
             const querySnapshot = await q.get();
             const students = querySnapshot.docs.map(doc => {
                 const data = doc.data();
+                // Asegúrate de que las fechas existen antes de intentar convertirlas
                 return {
                     id: doc.id,
                     ...data,
@@ -107,10 +124,15 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
                     fechaActualizacion: data.fechaActualizacion ? data.fechaActualizacion.toDate().toISOString() : null,
                 };
             });
+            console.log('EstudianteService: Estudiantes mapeados y listos para retornar:', students.length);
             return { students, totalCount };
 
         } catch (error) {
             console.error("Error en obtenerEstudiantes (backend service):", error);
+            // Si el error es de índice, Firebase te dará un mensaje claro con un link para crear el índice.
+            if (error.code === 'failed-precondition' && error.message.includes('The query requires an index')) {
+                 console.error('Error de índice en Firestore. Crea el índice sugerido en la consola de Firebase.');
+            }
             throw new Error(`Error al obtener estudiantes: ${error.message}`);
         }
     };
@@ -188,27 +210,31 @@ export default function createEstudianteService(db, auth) { // 'db' es la instan
         console.log(`EstudianteService: Buscando estudiante por tipo: ${tipoDocumento}, numero: ${numeroDocumento}`);
         try {
             const q = db.collection('estudiantes')
-                        // CORREGIDO: Los nombres de los campos deben coincidir con tu Firestore
-                        .where("tipo de documento", "==", tipoDocumento) //
-                        .where("numero de documento", "==", numeroDocumento) //
-                        .limit(1);
+                                // CORREGIDO: Los nombres de los campos deben coincidir con tu Firestore
+                                .where("tipo de documento", "==", tipoDocumento)
+                                .where("numero de documento", "==", numeroDocumento)
+                                .limit(1);
 
             const querySnapshot = await q.get();
 
-            console.log(`EstudianteService: Documentos encontrados: ${querySnapshot.docs.length}`); // Agregado para depuración
+            console.log(`EstudianteService: Documentos encontrados: ${querySnapshot.docs.length}`);
 
             if (querySnapshot.empty) {
-                console.log('EstudianteService: No se encontró ningún estudiante con ese documento.'); // Agregado para depuración
+                console.log('EstudianteService: No se encontró ningún estudiante con ese documento.');
                 return null;
             }
 
             const doc = querySnapshot.docs[0];
             const data = doc.data();
-            console.log('EstudianteService: Estudiante encontrado:', { id: doc.id, ...data }); // Agregado para depuración
+            console.log('EstudianteService: Estudiante encontrado:', { id: doc.id, ...data });
 
+            // Convertir objetos de fecha de Firestore a ISO strings para consistencia
             return {
                 id: doc.id,
-                ...data
+                ...data,
+                FechaNacimiento: data.FechaNacimiento instanceof Date ? data.FechaNacimiento.toISOString() : data.FechaNacimiento,
+                fechaCreacion: data.fechaCreacion ? data.fechaCreacion.toDate().toISOString() : null,
+                fechaActualizacion: data.fechaActualizacion ? data.fechaActualizacion.toDate().toISOString() : null,
             };
         } catch (error) {
             console.error("Error en buscarEstudiantePorDocumento (backend service):", error);
