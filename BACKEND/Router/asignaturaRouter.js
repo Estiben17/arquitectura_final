@@ -1,7 +1,6 @@
 // BACKEND/Router/asignaturaRouter.js
 
 import { Router } from 'express'; // Importa Router directamente
-
 import createAsignaturaController from '../Controller/asignaturaController.js';
 
 export default function createAsignaturaRouter(db, auth) {

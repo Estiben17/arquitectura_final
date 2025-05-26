@@ -1,6 +1,5 @@
 // BACKEND/Router/departamentoRouter.js
 import { Router } from 'express'; 
-
 import createDepartamentoController from '../Controller/departamentoController.js';
 
 export default function createDepartamentoRouter(db, auth) {

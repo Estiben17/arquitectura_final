@@ -1,7 +1,6 @@
 // BACKEND/Router/asistenciaRouter.js
 
 import { Router } from 'express'; // Importa Router directamente
-
 import createAsistenciaController from '../Controller/asistenciaController.js';
 
 export default function createAsistenciaRouter(db, auth) {

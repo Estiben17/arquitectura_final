@@ -1,6 +1,5 @@
 // BACKEND/Controller/departamentoController.js
 
-
 import createDepartamentoService from '../Service/departamentoService.js';
 
 export default function createDepartamentoController(db, auth) {

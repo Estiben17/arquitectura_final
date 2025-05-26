@@ -28,11 +28,9 @@ app.use('/api/asistencias', createAsistenciaRouter(db, auth));
 console.log('App.js: Montando router de departamentos...');
 app.use('/api/departamentos', createDepartamentoRouter(db, auth));
 console.log('App.js: Montando router de estudiantes en /api...');
-app.use('/api', createEstudianteRouter(db, auth)); // ESTA LÍNEA ES CLAVE
+app.use('/api', createEstudianteRouter(db, auth)); 
 console.log('App.js: Routers de API montados.');
-// =========================================================================
 
-// Ruta de prueba para verificar que el servidor está funcionando
 app.get('/', (req, res) => {
     res.send('Sistema de Gestión Académica - Backend funcionando correctamente');
 });

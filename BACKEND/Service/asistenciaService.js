@@ -10,8 +10,6 @@ export default function createAsistenciaService(db, auth) { // 'db' es la instan
                 throw new Error("Asignatura y fecha son campos obligatorios");
             }
 
-            // Convertir fecha a Timestamp de Firebase Admin
-            // Admin SDK trabaja bien con objetos Date de JS, o con admin.firestore.Timestamp
             const asistenciaData = {
                 ...datosAsignatura,
                 // Si la fecha llega como string, conviértela a Date. Firestore Admin la manejará como Timestamp.
@@ -68,8 +66,6 @@ export default function createAsistenciaService(db, auth) { // 'db' es la instan
                 return {
                     id: doc.id,
                     ...data,
-                    // Convertir Timestamp a fecha legible
-                    // Los Timestamps del Admin SDK tienen un método .toDate()
                     fecha: data.fecha ? data.fecha.toDate().toLocaleDateString() : null, // Verifica si 'fecha' existe
                     horaInicio: data.horaInicio || '--:--',
                     horaFin: data.horaFin || '--:--'
