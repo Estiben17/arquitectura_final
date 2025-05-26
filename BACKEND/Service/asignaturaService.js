@@ -1,114 +1,72 @@
-// Importaciones de Firebase
-import { initializeApp } from "firebase/app";
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc,
-  updateDoc,
-  deleteDoc 
-} from "firebase/firestore";
+export default function createAsignaturaService(db, auth) { // 'db' es la instancia de Firestore del Admin SDK
 
-// Configuración de Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyC0DPrKhgG7Wt46qlNqcNpf1rkgjRbSmBg",
-  authDomain: "registro-de-colegio.firebaseapp.com",
-  projectId: "registro-de-colegio",
-  storageBucket: "registro-de-colegio.appspot.com",
-  messagingSenderId: "66400564127",
-  appId: "1:66400564127:web:be34d8ea4361665a1183aa",
-  measurementId: "G-B11W53HT89"
-};
+    // Tus funciones de servicio. Ahora 'db' es la que fue INYECTADA
+    const crearAsignatura = async (datosAsignatura) => {
+        try {
+            if (!datosAsignatura.codigo || !datosAsignatura.nombre) {
+                throw new Error("Código y nombre son campos obligatorios");
+            }
+            // Usa la instancia 'db' (del Admin SDK) que recibiste
+            const docRef = await db.collection('asignaturas').add({
+                ...datosAsignatura,
+                fechaCreacion: new Date() // O si quieres usar el timestamp del servidor: admin.firestore.FieldValue.serverTimestamp()
+            });
 
-// Inicialización de Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+            return {
+                id: docRef.id,
+                ...datosAsignatura
+            };
+        } catch (error) {
+            console.error("Error en crearAsignatura (backend service):", error);
+            throw new Error(`Error al crear asignatura: ${error.message}`);
+        }
+    };
 
-// Referencias a colecciones
-const asignaturasCollection = collection(db, "asignaturas");
+    const obtenerAsignaturas = async () => {
+        try {
+            // Usa la instancia 'db' (del Admin SDK) que recibiste
+            const querySnapshot = await db.collection('asignaturas').get();
+            return querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+        } catch (error) {
+            console.error("Error en obtenerAsignaturas (backend service):", error);
+            throw new Error(`Error al obtener asignaturas: ${error.message}`);
+        }
+    };
 
-/**
- * Servicio para gestión de asignaturas
- */
-const asignaturaService = {
-  /**
-   * Crea una nueva asignatura
-   * @param {Object} datosAsignatura - Datos de la asignatura a crear
-   * @returns {Promise<Object>} Asignatura creada con ID
-   */
-  async crearAsignatura(datosAsignatura) {
-    try {
-      // Validación básica de datos
-      if (!datosAsignatura.codigo || !datosAsignatura.nombre) {
-        throw new Error("Código y nombre son campos obligatorios");
-      }
+    const actualizarAsignatura = async (id, nuevosDatos) => {
+        try {
+            // Usa la instancia 'db' (del Admin SDK) que recibiste.
+            // Para Admin SDK, se usa .doc(id) en lugar de doc(db, collectionName, id)
+            const docRef = db.collection('asignaturas').doc(id);
+            await docRef.update({
+                ...nuevosDatos,
+                fechaActualizacion: new Date()
+            });
+        } catch (error) {
+            console.error("Error en actualizarAsignatura (backend service):", error);
+            throw new Error(`Error al actualizar asignatura: ${error.message}`);
+        }
+    };
 
-      const docRef = await addDoc(asignaturasCollection, {
-        ...datosAsignatura,
-        fechaCreacion: new Date().toISOString()
-      });
-      
-      return { 
-        id: docRef.id, 
-        ...datosAsignatura 
-      };
-    } catch (error) {
-      console.error("Error en crearAsignatura:", error);
-      throw new Error(`Error al crear asignatura: ${error.message}`);
-    }
-  },
+    const eliminarAsignatura = async (id) => {
+        try {
+            // Usa la instancia 'db' (del Admin SDK) que recibiste
+            const docRef = db.collection('asignaturas').doc(id);
+            await docRef.delete();
+        } catch (error) {
+            console.error("Error en eliminarAsignatura (backend service):", error);
+            throw new Error(`Error al eliminar asignatura: ${error.message}`);
+        }
+    };
 
-  /**
-   * Obtiene todas las asignaturas
-   * @returns {Promise<Array>} Lista de asignaturas
-   */
-  async obtenerAsignaturas() {
-    try {
-      const querySnapshot = await getDocs(asignaturasCollection);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-    } catch (error) {
-      console.error("Error en obtenerAsignaturas:", error);
-      throw new Error(`Error al obtener asignaturas: ${error.message}`);
-    }
-  },
-
-  /**
-   * Actualiza una asignatura existente
-   * @param {string} id - ID de la asignatura
-   * @param {Object} nuevosDatos - Datos a actualizar
-   * @returns {Promise<void>}
-   */
-  async actualizarAsignatura(id, nuevosDatos) {
-    try {
-      const docRef = doc(db, "asignaturas", id);
-      await updateDoc(docRef, {
-        ...nuevosDatos,
-        fechaActualizacion: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error("Error en actualizarAsignatura:", error);
-      throw new Error(`Error al actualizar asignatura: ${error.message}`);
-    }
-  },
-
-  /**
-   * Elimina una asignatura
-   * @param {string} id - ID de la asignatura a eliminar
-   * @returns {Promise<void>}
-   */
-  async eliminarAsignatura(id) {
-    try {
-      const docRef = doc(db, "asignaturas", id);
-      await deleteDoc(docRef);
-    } catch (error) {
-      console.error("Error en eliminarAsignatura:", error);
-      throw new Error(`Error al eliminar asignatura: ${error.message}`);
-    }
-  }
-};
-
-export default asignaturaService;
+    // Retorna el objeto con los métodos del servicio
+    return {
+        crearAsignatura,
+        obtenerAsignaturas,
+        actualizarAsignatura,
+        eliminarAsignatura
+    };
+}

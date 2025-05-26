@@ -1,4 +1,4 @@
-import asistenciaService from '../services/asistenciaService.js';
+import asistenciaService from '../Service/asistenciaService.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Elementos del DOM

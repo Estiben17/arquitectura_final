@@ -1,166 +1,142 @@
-import { initializeApp } from "firebase/app";
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  getDocs,
-  doc,
-  updateDoc,
-  query,
-  where,
-  getDoc
-} from "firebase/firestore";
+// BACKEND/Service/departamentoService.js (¡MUY IMPORTANTE: ESTE ES EL SERVICIO DEL BACKEND!)
 
-// Configuración de Firebase (la misma que usaste antes)
-const firebaseConfig = {
-  apiKey: "AIzaSyC0DPrKhgG7Wt46qlNqcNpf1rkgjRbSmBg",
-  authDomain: "registro-de-colegio.firebaseapp.com",
-  projectId: "registro-de-colegio",
-  storageBucket: "registro-de-colegio.appspot.com",
-  messagingSenderId: "66400564127",
-  appId: "1:66400564127:web:be34d8ea4361665a1183aa",
-  measurementId: "G-B11W53HT89"
-};
+// =======================================================================================
+// ADVERTENCIA: NO IMPORTAR firebase/app NI firebase/firestore AQUI
+// NO DEBE HABER 'firebaseConfig', 'initializeApp', 'getFirestore', 'collection', 'doc', etc.
+// ESTE ARCHIVO RECIBE 'db' DEL SDK ADMIN.
+// =======================================================================================
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Si necesitas usar admin.firestore.FieldValue.serverTimestamp(), importa 'admin'
+// import { admin } from '../firebase.js'; // Descomenta si usas admin.firestore.FieldValue.serverTimestamp()
 
-const departamentosCollection = collection(db, "departamentos");
-const estudiantesCollection = collection(db, "estudiantes");
-const profesoresCollection = collection(db, "profesores");
-const asignaturasCollection = collection(db, "asignaturas");
+// =======================================================================================
+// PASO CLAVE: Exporta una FUNCIÓN que "crea" tu servicio y RECIBE 'db' y 'auth'
+export default function createDepartamentoService(db, auth) { // 'db' es la instancia de Firestore del Admin SDK
 
-const departamentoService = {
-  /**
-   * Obtiene todos los departamentos con filtros opcionales
-   * @param {Object} filtros - Objeto con filtros de búsqueda
-   * @returns {Promise<Array>} Lista de departamentos
-   */
-  async obtenerDepartamentos(filtros = {}) {
-    try {
-      let q = query(departamentosCollection);
-      
-      if (filtros.estado && filtros.estado !== 'all') {
-        q = query(q, where("estado", "==", filtros.estado));
-      }
-      
-      if (filtros.busqueda) {
-        q = query(q, where("nombre", ">=", filtros.busqueda));
-      }
+    // Ya no necesitas 'departamentosCollection', 'estudiantesCollection', etc. globales
+    // porque 'db' es la instancia de Firestore del Admin SDK
+    // y accedes a las colecciones con db.collection('nombre_coleccion')
 
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-    } catch (error) {
-      console.error("Error en obtenerDepartamentos:", error);
-      throw new Error(`Error al obtener departamentos: ${error.message}`);
-    }
-  },
+    /**
+     * Servicio para gestión de departamentos (para el backend)
+     */
+    const obtenerDepartamentos = async (filtros = {}) => {
+        try {
+            let q = db.collection('departamentos'); // Inicia la consulta desde la instancia db del Admin SDK
 
-  /**
-   * Obtiene un departamento por su ID
-   * @param {string} id - ID del departamento
-   * @returns {Promise<Object>} Datos del departamento
-   */
-  async obtenerDepartamentoPorId(id) {
-    try {
-      const docRef = doc(db, "departamentos", id);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
-      } else {
-        throw new Error("No se encontró el departamento");
-      }
-    } catch (error) {
-      console.error("Error en obtenerDepartamentoPorId:", error);
-      throw new Error(`Error al obtener departamento: ${error.message}`);
-    }
-  },
+            if (filtros.estado && filtros.estado !== 'all') {
+                q = q.where("estado", "==", filtros.estado);
+            }
 
-  /**
-   * Actualiza un departamento
-   * @param {string} id - ID del departamento
-   * @param {Object} nuevosDatos - Datos a actualizar
-   * @returns {Promise<void>}
-   */
-  async actualizarDepartamento(id, nuevosDatos) {
-    try {
-      const docRef = doc(db, "departamentos", id);
-      await updateDoc(docRef, {
-        ...nuevosDatos,
-        fechaActualizacion: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error("Error en actualizarDepartamento:", error);
-      throw new Error(`Error al actualizar departamento: ${error.message}`);
-    }
-  },
+            if (filtros.busqueda) {
+                // Para búsquedas de prefijo, Firestore necesita un rango.
+                // Considera usar un campo 'searchKeywords' como en estudiante, o soluciones de búsqueda full-text.
+                // Esta es una búsqueda básica de "empieza con".
+                q = q.where("nombre", ">=", filtros.busqueda)
+                     .where("nombre", "<=", filtros.busqueda + '\uf8ff');
+            }
 
-  /**
-   * Obtiene estadísticas de un departamento
-   * @param {string} idDepartamento - ID del departamento
-   * @returns {Promise<Object>} Objeto con estadísticas
-   */
-  async obtenerEstadisticasDepartamento(idDepartamento) {
-    try {
-      // Obtener estudiantes del departamento
-      const qEstudiantes = query(
-        estudiantesCollection, 
-        where("idDepartamento", "==", idDepartamento)
-      );
-      const estudiantesSnapshot = await getDocs(qEstudiantes);
-      
-      // Obtener profesores del departamento
-      const qProfesores = query(
-        profesoresCollection, 
-        where("idDepartamento", "==", idDepartamento)
-      );
-      const profesoresSnapshot = await getDocs(qProfesores);
-      
-      // Obtener asignaturas del departamento
-      const qAsignaturas = query(
-        asignaturasCollection, 
-        where("idDepartamento", "==", idDepartamento)
-      );
-      const asignaturasSnapshot = await getDocs(qAsignaturas);
-      
-      return {
-        totalEstudiantes: estudiantesSnapshot.size,
-        totalProfesores: profesoresSnapshot.size,
-        totalAsignaturas: asignaturasSnapshot.size
-      };
-    } catch (error) {
-      console.error("Error en obtenerEstadisticasDepartamento:", error);
-      throw new Error(`Error al obtener estadísticas: ${error.message}`);
-    }
-  },
+            const querySnapshot = await q.get(); // Ejecuta la consulta
+            return querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+        } catch (error) {
+            console.error("Error en obtenerDepartamentos (backend service):", error);
+            throw new Error(`Error al obtener departamentos: ${error.message}`);
+        }
+    };
 
-  /**
-   * Busca un estudiante por documento
-   * @param {string} documento - Número de documento del estudiante
-   * @returns {Promise<Object>} Datos del estudiante
-   */
-  async buscarEstudiantePorDocumento(documento) {
-    try {
-      const q = query(estudiantesCollection, where("documento", "==", documento));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        return null;
-      }
-      
-      return {
-        id: querySnapshot.docs[0].id,
-        ...querySnapshot.docs[0].data()
-      };
-    } catch (error) {
-      console.error("Error en buscarEstudiantePorDocumento:", error);
-      throw new Error(`Error al buscar estudiante: ${error.message}`);
-    }
-  }
-};
+    const obtenerDepartamentoPorId = async (id) => {
+        try {
+            // Usa la instancia 'db' (del Admin SDK) para acceder al documento
+            const docRef = db.collection("departamentos").doc(id);
+            const docSnap = await docRef.get(); // Ejecuta la obtención del documento
 
-export default departamentoService;
+            if (docSnap.exists) { // 'exists' es una propiedad booleana
+                return { id: docSnap.id, ...docSnap.data() };
+            } else {
+                return null; // Retorna null si no se encuentra, en lugar de lanzar error aquí
+                // El controlador puede decidir si es 404 o lanzar un error específico
+            }
+        } catch (error) {
+            console.error("Error en obtenerDepartamentoPorId (backend service):", error);
+            throw new Error(`Error al obtener departamento: ${error.message}`);
+        }
+    };
+
+    const actualizarDepartamento = async (id, nuevosDatos) => {
+        try {
+            // Usa la instancia 'db' (del Admin SDK) para acceder al documento
+            const docRef = db.collection("departamentos").doc(id);
+            await docRef.update({
+                ...nuevosDatos,
+                fechaActualizacion: new Date() // Usar objeto Date() o admin.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (error) {
+            console.error("Error en actualizarDepartamento (backend service):", error);
+            throw new Error(`Error al actualizar departamento: ${error.message}`);
+        }
+    };
+
+    const obtenerEstadisticasDepartamento = async (idDepartamento) => {
+        try {
+            // Obtener estudiantes del departamento
+            const estudiantesSnapshot = await db.collection('estudiantes')
+                                                .where("idDepartamento", "==", idDepartamento)
+                                                .get();
+
+            // Obtener profesores del departamento
+            const profesoresSnapshot = await db.collection('profesores')
+                                                .where("idDepartamento", "==", idDepartamento)
+                                                .get();
+
+            // Obtener asignaturas del departamento
+            const asignaturasSnapshot = await db.collection('asignaturas')
+                                                .where("idDepartamento", "==", idDepartamento)
+                                                .get();
+
+            return {
+                totalEstudiantes: estudiantesSnapshot.size,
+                totalProfesores: profesoresSnapshot.size,
+                totalAsignaturas: asignaturasSnapshot.size
+            };
+        } catch (error) {
+            console.error("Error en obtenerEstadisticasDepartamento (backend service):", error);
+            throw new Error(`Error al obtener estadísticas: ${error.message}`);
+        }
+    };
+
+    const buscarEstudiantePorDocumento = async (tipoDocumento, numeroDocumento) => {
+        try {
+            // Asumiendo que el campo en Firestore es 'numeroDocumento' y 'tipoDocumento'
+            const q = db.collection('estudiantes')
+                        .where("tipoDocumento", "==", tipoDocumento)
+                        .where("numeroDocumento", "==", numeroDocumento)
+                        .limit(1); // Limitar a 1 resultado si el documento es único
+
+            const querySnapshot = await q.get();
+
+            if (querySnapshot.empty) {
+                return null;
+            }
+
+            return {
+                id: querySnapshot.docs[0].id,
+                ...querySnapshot.docs[0].data()
+            };
+        } catch (error) {
+            console.error("Error en buscarEstudiantePorDocumento (backend service):", error);
+            throw new Error(`Error al buscar estudiante por documento: ${error.message}`);
+        }
+    };
+
+    // Retorna el objeto con los métodos del servicio
+    return {
+        obtenerDepartamentos,
+        obtenerDepartamentoPorId, // Asegúrate de que el controlador llama a este método
+        actualizarDepartamento,
+        obtenerEstadisticasDepartamento, // Renombrado para claridad con el controlador anterior
+        buscarEstudiantePorDocumento
+    };
+}

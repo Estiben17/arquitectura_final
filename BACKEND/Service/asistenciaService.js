@@ -1,177 +1,166 @@
-import { initializeApp } from "firebase/app";
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  getDocs,
-  doc,
-  updateDoc,
-  query,
-  where,
-  Timestamp
-} from "firebase/firestore";
+// BACKEND/Service/asistenciaService.js (¡MUY IMPORTANTE: ESTE ES EL SERVICIO DEL BACKEND!)
 
-// Configuración de Firebase (la misma que usaste para asignaturas)
-const firebaseConfig = {
-  apiKey: "AIzaSyC0DPrKhgG7Wt46qlNqcNpf1rkgjRbSmBg",
-  authDomain: "registro-de-colegio.firebaseapp.com",
-  projectId: "registro-de-colegio",
-  storageBucket: "registro-de-colegio.appspot.com",
-  messagingSenderId: "66400564127",
-  appId: "1:66400564127:web:be34d8ea4361665a1183aa",
-  measurementId: "G-B11W53HT89"
-};
+// =======================================================================================
+// ADVERTENCIA: NO IMPORTAR firebase/app NI firebase/firestore AQUI
+// NO DEBE HABER 'firebaseConfig', 'initializeApp', 'getFirestore', 'collection', 'doc', etc.
+// ESTE ARCHIVO RECIBE 'db' DEL SDK ADMIN.
+// =======================================================================================
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Importa 'admin' si necesitas usar FieldValue.serverTimestamp() o admin.firestore.Timestamp
+// Asegúrate de que 'admin' se exporte desde BACKEND/firebase.js
+// Si solo usas new Date(), no necesitas importar 'admin' aquí.
+// import { admin } from '../firebase.js'; // Descomenta si usas admin.firestore.FieldValue.serverTimestamp()
 
-const asistenciasCollection = collection(db, "asistencias");
-const estudiantesCollection = collection(db, "estudiantes");
+// =======================================================================================
+// PASO CLAVE: Exporta una FUNCIÓN que "crea" tu servicio y RECIBE 'db' y 'auth'
+export default function createAsistenciaService(db, auth) { // 'db' es la instancia de Firestore del Admin SDK
 
-const asistenciaService = {
-  /**
-   * Crea un nuevo registro de asistencia
-   * @param {Object} datosAsistencia - Datos de la asistencia
-   * @returns {Promise<Object>} Asistencia creada con ID
-   */
-  async crearAsistencia(datosAsistencia) {
-    try {
-      // Validación de datos requeridos
-      if (!datosAsistencia.idAsignatura || !datosAsistencia.fecha) {
-        throw new Error("Asignatura y fecha son campos obligatorios");
-      }
+    // Ya no necesitas 'asistenciasCollection' ni 'estudiantesCollection' globales
+    // porque 'db' es ahora la instancia de Firestore del Admin SDK
+    // y accedes a las colecciones con db.collection('nombre_coleccion')
 
-      // Convertir fecha a Timestamp de Firebase
-      const asistenciaData = {
-        ...datosAsistencia,
-        fecha: Timestamp.fromDate(new Date(datosAsistencia.fecha)),
-        horaInicio: datosAsistencia.horaInicio || null,
-        horaFin: datosAsistencia.horaFin || null,
-        estudiantes: datosAsistencia.estudiantes || [],
-        fechaCreacion: Timestamp.now()
-      };
+    /**
+     * Servicio para gestión de asistencias (para el backend)
+     */
+    const crearAsistencia = async (datosAsistencia) => {
+        try {
+            // Validación de datos requeridos
+            if (!datosAsistencia.idAsignatura || !datosAsistencia.fecha) {
+                throw new Error("Asignatura y fecha son campos obligatorios");
+            }
 
-      const docRef = await addDoc(asistenciasCollection, asistenciaData);
-      
-      return { 
-        id: docRef.id, 
-        ...asistenciaData 
-      };
-    } catch (error) {
-      console.error("Error en crearAsistencia:", error);
-      throw new Error(`Error al crear asistencia: ${error.message}`);
-    }
-  },
+            // Convertir fecha a Timestamp de Firebase Admin
+            // Admin SDK trabaja bien con objetos Date de JS, o con admin.firestore.Timestamp
+            const asistenciaData = {
+                ...datosAsignatura,
+                // Si la fecha llega como string, conviértela a Date. Firestore Admin la manejará como Timestamp.
+                fecha: new Date(datosAsistencia.fecha),
+                horaInicio: datosAsistencia.horaInicio || null,
+                horaFin: datosAsistencia.horaFin || null,
+                estudiantes: datosAsistencia.estudiantes || [],
+                fechaCreacion: new Date() // Usar objeto Date() o admin.firestore.FieldValue.serverTimestamp()
+            };
 
-  /**
-   * Obtiene todas las asistencias con filtros opcionales
-   * @param {Object} filtros - Objeto con filtros de búsqueda
-   * @returns {Promise<Array>} Lista de asistencias
-   */
-  async obtenerAsistencias(filtros = {}) {
-    try {
-      // Construir consulta con filtros
-      let q = query(asistenciasCollection);
-      
-      if (filtros.idAsignatura && filtros.idAsignatura !== 'all') {
-        q = query(q, where("idAsignatura", "==", filtros.idAsignatura));
-      }
-      
-      if (filtros.grupo && filtros.grupo !== 'all') {
-        q = query(q, where("grupo", "==", filtros.grupo));
-      }
-      
-      if (filtros.semestre && filtros.semestre !== 'all') {
-        q = query(q, where("semestre", "==", filtros.semestre));
-      }
-      
-      if (filtros.fechaDesde) {
-        q = query(q, where("fecha", ">=", Timestamp.fromDate(new Date(filtros.fechaDesde))));
-      }
-      
-      if (filtros.fechaHasta) {
-        q = query(q, where("fecha", "<=", Timestamp.fromDate(new Date(filtros.fechaHasta))));
-      }
+            // Usa la instancia 'db' (del Admin SDK) para acceder a la colección y añadir un documento
+            const docRef = await db.collection('asistencias').add(asistenciaData);
 
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          // Convertir Timestamp a fecha legible
-          fecha: data.fecha.toDate().toLocaleDateString(),
-          horaInicio: data.horaInicio || '--:--',
-          horaFin: data.horaFin || '--:--'
-        };
-      });
-    } catch (error) {
-      console.error("Error en obtenerAsistencias:", error);
-      throw new Error(`Error al obtener asistencias: ${error.message}`);
-    }
-  },
+            return {
+                id: docRef.id,
+                ...asistenciaData
+            };
+        } catch (error) {
+            console.error("Error en crearAsistencia (backend service):", error);
+            throw new Error(`Error al crear asistencia: ${error.message}`);
+        }
+    };
 
-  /**
-   * Registra la asistencia de un estudiante
-   * @param {string} idAsistencia - ID del registro de asistencia
-   * @param {Object} datosEstudiante - Datos del estudiante y su asistencia
-   * @returns {Promise<void>}
-   */
-  async registrarAsistenciaEstudiante(idAsistencia, datosEstudiante) {
-    try {
-      const asistenciaRef = doc(db, "asistencias", idAsistencia);
-      
-      // Primero obtenemos el documento actual
-      const docSnapshot = await getDoc(asistenciaRef);
-      const estudiantes = docSnapshot.data().estudiantes || [];
-      
-      // Verificamos si el estudiante ya está registrado
-      const index = estudiantes.findIndex(e => e.idEstudiante === datosEstudiante.idEstudiante);
-      
-      if (index >= 0) {
-        // Actualizar registro existente
-        estudiantes[index] = datosEstudiante;
-      } else {
-        // Agregar nuevo registro
-        estudiantes.push(datosEstudiante);
-      }
-      
-      // Actualizar el documento
-      await updateDoc(asistenciaRef, {
-        estudiantes,
-        fechaActualizacion: Timestamp.now()
-      });
-    } catch (error) {
-      console.error("Error en registrarAsistenciaEstudiante:", error);
-      throw new Error(`Error al registrar asistencia: ${error.message}`);
-    }
-  },
+    const obtenerAsistencias = async (filtros = {}) => {
+        try {
+            // Construir consulta con filtros
+            let q = db.collection('asistencias'); // Inicia la consulta desde la instancia db del Admin SDK
 
-  /**
-   * Obtiene estudiantes para una asignatura/grupo
-   * @param {string} idAsignatura - ID de la asignatura
-   * @param {string} grupo - Grupo de la asignatura
-   * @returns {Promise<Array>} Lista de estudiantes
-   */
-  async obtenerEstudiantesParaAsistencia(idAsignatura, grupo) {
-    try {
-      const q = query(
-        estudiantesCollection, 
-        where("asignaturas", "array-contains", idAsignatura),
-        where("grupo", "==", grupo)
-      );
-      
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-    } catch (error) {
-      console.error("Error en obtenerEstudiantesParaAsistencia:", error);
-      throw new Error(`Error al obtener estudiantes: ${error.message}`);
-    }
-  }
-};
+            if (filtros.idAsignatura && filtros.idAsignatura !== 'all') {
+                q = q.where("idAsignatura", "==", filtros.idAsignatura);
+            }
 
-export default asistenciaService;
+            if (filtros.grupo && filtros.grupo !== 'all') {
+                q = q.where("grupo", "==", filtros.grupo);
+            }
+
+            if (filtros.semestre && filtros.semestre !== 'all') {
+                q = q.where("semestre", "==", filtros.semestre);
+            }
+
+            // Convertir fechas a objetos Date para comparación con Firestore Admin SDK
+            if (filtros.fechaDesde) {
+                q = q.where("fecha", ">=", new Date(filtros.fechaDesde));
+            }
+
+            if (filtros.fechaHasta) {
+                q = q.where("fecha", "<=", new Date(filtros.fechaHasta));
+            }
+
+            const querySnapshot = await q.get(); // Ejecuta la consulta
+
+            return querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    // Convertir Timestamp a fecha legible
+                    // Los Timestamps del Admin SDK tienen un método .toDate()
+                    fecha: data.fecha ? data.fecha.toDate().toLocaleDateString() : null, // Verifica si 'fecha' existe
+                    horaInicio: data.horaInicio || '--:--',
+                    horaFin: data.horaFin || '--:--'
+                };
+            });
+        } catch (error) {
+            console.error("Error en obtenerAsistencias (backend service):", error);
+            throw new Error(`Error al obtener asistencias: ${error.message}`);
+        }
+    };
+
+    const registrarAsistenciaEstudiante = async (idAsistencia, datosEstudiante) => {
+        try {
+            // Usa la instancia 'db' (del Admin SDK) para acceder al documento
+            const asistenciaRef = db.collection("asistencias").doc(idAsistencia);
+
+            // Primero obtenemos el documento actual
+            const docSnapshot = await asistenciaRef.get();
+
+            if (!docSnapshot.exists) {
+                throw new Error("Registro de asistencia no encontrado.");
+            }
+
+            const estudiantes = docSnapshot.data().estudiantes || [];
+
+            // Verificamos si el estudiante ya está registrado
+            const index = estudiantes.findIndex(e => e.idEstudiante === datosEstudiante.idEstudiante);
+
+            if (index >= 0) {
+                // Actualizar registro existente
+                estudiantes[index] = datosEstudiante;
+            } else {
+                // Agregar nuevo registro
+                estudiantes.push(datosEstudiante);
+            }
+
+            // Actualizar el documento
+            await asistenciaRef.update({
+                estudiantes,
+                fechaActualizacion: new Date() // Usar objeto Date() o admin.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (error) {
+            console.error("Error en registrarAsistenciaEstudiante:", error);
+            throw new Error(`Error al registrar asistencia: ${error.message}`);
+        }
+    };
+
+    const obtenerEstudiantesParaAsistencia = async (idAsignatura, grupo) => {
+        try {
+            // Inicia la consulta desde la instancia db del Admin SDK
+            let q = db.collection('estudiantes');
+
+            const querySnapshot = await q
+                .where("asignaturas", "array-contains", idAsignatura)
+                .where("grupo", "==", grupo)
+                .get();
+
+            return querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+        } catch (error) {
+            console.error("Error en obtenerEstudiantesParaAsistencia:", error);
+            throw new Error(`Error al obtener estudiantes para asistencia: ${error.message}`);
+        }
+    };
+
+    // Retorna el objeto con los métodos del servicio
+    return {
+        crearAsistencia,
+        obtenerAsistencias,
+        registrarAsistenciaEstudiante,
+        obtenerEstudiantesParaAsistencia
+    };
+}
